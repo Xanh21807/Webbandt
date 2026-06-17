@@ -29,6 +29,11 @@ Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
 
+// Forgot password page
+Route::get('/forgot-password', function () {
+    return view('auth.forgot-password');
+})->name('password.request');
+
 // Product routes
 Route::get('/products', function () {
     return view('products.index');

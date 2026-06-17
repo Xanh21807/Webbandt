@@ -132,15 +132,16 @@ class AuthController extends Controller
             'used' => false,
         ]);
 
-        // TODO: Send OTP via email
-        // Mail::to($request->email)->send(new OtpMail($otp));
+        // Send OTP via email
+        try {
+            Mail::to($request->email)->send(new \App\Mail\OtpMail($otp));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Send OTP Email Error: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Mã OTP đã được gửi đến email của bạn',
-            'data' => [
-                'otp' => $otp // Remove this in production
-            ]
         ]);
     }
 
