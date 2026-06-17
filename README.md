@@ -58,6 +58,20 @@ composer install
 # Chỉ cần tạo database: webmuabandt
 ```
 
+### 2.1 Bật chatbot LLM thật
+Để chatbot trả lời linh hoạt bằng OpenAI hoặc một endpoint tương thích OpenAI, thêm các biến sau vào `.env`:
+
+```bash
+CHATBOT_PROVIDER=openai
+CHATBOT_API_KEY=your_api_key_here
+CHATBOT_BASE_URL=https://api.openai.com/v1
+CHATBOT_MODEL=gpt-4o-mini
+CHATBOT_TIMEOUT=20
+CHATBOT_HISTORY_LIMIT=8
+```
+
+Nếu chưa có `CHATBOT_API_KEY`, bot sẽ tự động dùng câu trả lời dự phòng nội bộ.
+
 ### 3. Tạo Database
 Tạo database MySQL tên: **webmuabandt**
 

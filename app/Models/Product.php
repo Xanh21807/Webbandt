@@ -33,7 +33,7 @@ class Product extends Model
 
     public function images()
     {
-        return $this->hasMany(ProductImage::class);
+        return $this->hasMany(ProductImage::class)->orderBy('id');
     }
 
     public function reviews()
@@ -99,8 +99,20 @@ class Product extends Model
         if (isset($filters['max_price'])) {
             $query->where('price', '<=', $filters['max_price']);
         }
+        // Battery level filters: allow semantic values
+        if (isset($filters['battery'])) {
+            if ($filters['battery'] === 'high') {
+                $query->where('battery', '>=', 4500);
+            } elseif ($filters['battery'] === 'medium') {
+                $query->whereBetween('battery', [3500, 4499]);
+            }
+        }
         if (isset($filters['category_id'])) {
-            $query->where('category_id', $filters['category_id']);
+            if (is_array($filters['category_id'])) {
+                $query->whereIn('category_id', $filters['category_id']);
+            } else {
+                $query->where('category_id', $filters['category_id']);
+            }
         }
         // Lọc theo mức giá (price_range)
         if (isset($filters['price_range'])) {

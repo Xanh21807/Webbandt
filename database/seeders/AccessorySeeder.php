@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use Illuminate\Support\Str;
 
 class AccessorySeeder extends Seeder
 {
@@ -353,14 +354,76 @@ class AccessorySeeder extends Seeder
 
         foreach ($accessories as $accessory) {
             $product = Product::create($accessory);
-            
-            // Add placeholder image
-            ProductImage::create([
-                'product_id' => $product->id,
-                'image_url' => 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500&h=500&fit=crop',
-            ]);
+
+            foreach ($this->buildImageUrls($accessory['name']) as $imageUrl) {
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'image_url' => $imageUrl,
+                ]);
+            }
         }
 
         echo "Đã thêm " . count($accessories) . " sản phẩm phụ kiện!\n";
     }
+
+    private function buildImageUrls(string $name): array
+    {
+        $normalizedName = Str::of($name)->lower()->ascii()->toString();
+
+        if (Str::contains($normalizedName, 'op lung')) {
+            return [
+                'storage/product-images/product-image-031.jpg',
+                'storage/product-images/product-image-017.jpg',
+                'storage/product-images/product-image-038.jpg',
+            ];
+        }
+
+        if (Str::contains($normalizedName, 'cap')) {
+            return [
+                'storage/product-images/product-image-017.jpg',
+                'storage/product-images/product-image-031.jpg',
+                'storage/product-images/product-image-019.jpg',
+            ];
+        }
+
+        if (Str::contains($normalizedName, 'tai nghe') || Str::contains($normalizedName, 'earbuds') || Str::contains($normalizedName, 'airpods') || Str::contains($normalizedName, 'sony') || Str::contains($normalizedName, 'jbl')) {
+            return [
+                'storage/product-images/product-image-022.jpg',
+                'storage/product-images/product-image-012.jpg',
+                'storage/product-images/product-image-035.jpg',
+            ];
+        }
+
+        if (Str::contains($normalizedName, 'sac du phong') || Str::contains($normalizedName, 'power bank') || Str::contains($normalizedName, 'pin sac')) {
+            return [
+                'storage/product-images/product-image-038.jpg',
+                'storage/product-images/product-image-017.jpg',
+                'storage/product-images/product-image-035.jpg',
+            ];
+        }
+
+        if (Str::contains($normalizedName, 'mieng dan') || Str::contains($normalizedName, 'kinh cuong luc')) {
+            return [
+                'storage/product-images/product-image-031.jpg',
+                'storage/product-images/product-image-027.jpg',
+                'storage/product-images/product-image-007.jpg',
+            ];
+        }
+
+        if (Str::contains($normalizedName, 'gia do') || Str::contains($normalizedName, 'tripod') || Str::contains($normalizedName, 'popsocket')) {
+            return [
+                'storage/product-images/product-image-012.jpg',
+                'storage/product-images/product-image-031.jpg',
+                'storage/product-images/product-image-035.jpg',
+            ];
+        }
+
+        return [
+            'storage/product-images/product-image-031.jpg',
+            'storage/product-images/product-image-017.jpg',
+            'storage/product-images/product-image-031.jpg',
+        ];
+    }
 }
+
+

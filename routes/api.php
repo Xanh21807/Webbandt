@@ -3,9 +3,11 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
@@ -19,7 +21,6 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-
 // Admin public routes
 Route::prefix('admin')->group(function () {
     Route::post('/login', [AdminAuthController::class, 'login']);
@@ -29,9 +30,20 @@ Route::prefix('admin')->group(function () {
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/filter-options', [ProductController::class, 'filterOptions']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
+Route::get('/products/{id}/accessories', [ProductController::class, 'accessories']);
+Route::get('/products/{id}/combos', [ProductController::class, 'combos']);
+Route::get('/products/{id}/reviews', [ReviewController::class, 'index']);
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/products/{id}/review-eligibility', [ReviewController::class, 'eligibility']);
+    Route::post('/products/{id}/reviews', [ReviewController::class, 'store']);
+});
 
 // Categories public routes
 Route::get('/categories', [AdminCategoryController::class, 'index']);
+
+// Chatbot public route
+Route::post('/chat', [ChatbotController::class, 'reply']);
 
 // Protected user routes
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -62,6 +74,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
     Route::post('/checkout', [OrderController::class, 'checkout']);
     Route::put('/orders/{id}/cancel', [OrderController::class, 'cancelOrder']);
+
+    // Recommendations
+    Route::get('/recommendations', [\App\Http\Controllers\Api\RecommendationController::class, 'index']);
 });
 
 // Protected admin routes
@@ -88,6 +103,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/orders', [AdminOrderController::class, 'index']);
     Route::get('/orders/{id}', [AdminOrderController::class, 'show']);
     Route::put('/orders/{id}', [AdminOrderController::class, 'updateStatus']);
+    Route::put('/orders/{id}/confirm-payment', [AdminOrderController::class, 'confirmPayment']);
     Route::delete('/orders/{id}', [AdminOrderController::class, 'destroy']);
     Route::put('/orders/{id}/cancel', [AdminOrderController::class, 'cancel']);
 
@@ -112,4 +128,6 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/statistics/revenue', [StatisticsController::class, 'revenueReport']);
     Route::get('/statistics/products', [StatisticsController::class, 'productReport']);
     Route::get('/statistics/categories', [StatisticsController::class, 'categoryReport']);
+
+    
 });

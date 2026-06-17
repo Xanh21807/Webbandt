@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use Illuminate\Support\Str;
 
 class ProductSeeder extends Seeder
 {
@@ -24,7 +25,7 @@ class ProductSeeder extends Seeder
                 'description' => 'iPhone 16 Pro với chip A18 Pro, camera 48MP, màn hình ProMotion 120Hz',
                 'quantity' => 45,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-024.jpg'
             ],
             [
                 'category_id' => 1,
@@ -37,7 +38,7 @@ class ProductSeeder extends Seeder
                 'description' => 'iPhone 16 với chip A18, Dynamic Island, camera 48MP cải tiến',
                 'quantity' => 60,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-001.jpg'
             ],
             [
                 'category_id' => 1,
@@ -50,7 +51,7 @@ class ProductSeeder extends Seeder
                 'description' => 'iPhone 15 với Dynamic Island, camera 48MP, cổng USB-C',
                 'quantity' => 80,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-049.jpg'
             ],
             [
                 'category_id' => 1,
@@ -63,7 +64,7 @@ class ProductSeeder extends Seeder
                 'description' => 'iPhone 15 Plus màn hình 6.7 inch, pin lớn, Dynamic Island',
                 'quantity' => 40,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-023.jpg'
             ],
             [
                 'category_id' => 1,
@@ -76,7 +77,7 @@ class ProductSeeder extends Seeder
                 'description' => 'iPhone 15 Pro với chip A17 Pro, khung Titan, Action Button',
                 'quantity' => 55,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1678685888221-cda773a3dcdb?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-046.jpg'
             ],
             [
                 'category_id' => 1,
@@ -89,7 +90,7 @@ class ProductSeeder extends Seeder
                 'description' => 'iPhone 14 với chip A15 Bionic, camera kép 12MP',
                 'quantity' => 100,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1663499482523-1c0c1bae4ce1?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-045.jpg'
             ],
             [
                 'category_id' => 1,
@@ -102,7 +103,7 @@ class ProductSeeder extends Seeder
                 'description' => 'iPhone 14 Plus màn hình lớn 6.7 inch, pin cả ngày',
                 'quantity' => 70,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1678911820864-e2c567c655d7?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-048.jpg'
             ],
             [
                 'category_id' => 1,
@@ -115,7 +116,7 @@ class ProductSeeder extends Seeder
                 'description' => 'iPhone SE giá rẻ với chip A15 Bionic, Touch ID',
                 'quantity' => 120,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1624920608813-5771b05f4b74?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-049.jpg'
             ],
 
             // ============ SAMSUNG (category_id = 2) ============
@@ -130,7 +131,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Galaxy S24 với Galaxy AI, màn hình Dynamic AMOLED 2X',
                 'quantity' => 65,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-040.jpg'
             ],
             [
                 'category_id' => 2,
@@ -143,7 +144,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Galaxy S24+ màn hình 6.7 inch QHD+, Galaxy AI',
                 'quantity' => 50,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1585060544812-6b45742d762f?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-018.jpg'
             ],
             [
                 'category_id' => 2,
@@ -156,7 +157,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Galaxy Z Fold6 gập được, màn hình 7.6 inch, S Pen',
                 'quantity' => 25,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1628744876497-eb30460be9f6?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-043.jpg'
             ],
             [
                 'category_id' => 2,
@@ -169,7 +170,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Galaxy Z Flip6 gập nhỏ gọn, màn hình phụ 3.4 inch',
                 'quantity' => 40,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1614380417943-729b0d6d8d19?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-032.jpg'
             ],
             [
                 'category_id' => 2,
@@ -182,7 +183,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Galaxy A55 5G với chip Exynos 1480, camera 50MP OIS',
                 'quantity' => 150,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-013.jpg'
             ],
             [
                 'category_id' => 2,
@@ -195,7 +196,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Galaxy A35 5G giá tốt, màn hình Super AMOLED 120Hz',
                 'quantity' => 200,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-026.jpg'
             ],
             [
                 'category_id' => 2,
@@ -208,7 +209,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Galaxy A15 phân khúc giá rẻ, màn hình 6.5 inch FHD+',
                 'quantity' => 300,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-032.jpg'
             ],
             [
                 'category_id' => 2,
@@ -221,7 +222,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Galaxy M54 pin khủng 6000mAh, camera 108MP',
                 'quantity' => 100,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1546054454-aa26e2b734c7?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-008.jpg'
             ],
 
             // ============ XIAOMI (category_id = 3) ============
@@ -236,7 +237,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Xiaomi 14 Ultra với camera Leica, Snapdragon 8 Gen 3',
                 'quantity' => 30,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1598327106026-d9521da673d1?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-028.jpg'
             ],
             [
                 'category_id' => 3,
@@ -249,7 +250,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Xiaomi 14 màn hình phẳng, camera Leica 50MP',
                 'quantity' => 55,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-014.jpg'
             ],
             [
                 'category_id' => 3,
@@ -262,7 +263,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Redmi Note 13 Pro+ camera 200MP, sạc nhanh 120W',
                 'quantity' => 120,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-003.jpg'
             ],
             [
                 'category_id' => 3,
@@ -275,7 +276,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Redmi Note 13 Pro camera 200MP, màn hình AMOLED 120Hz',
                 'quantity' => 150,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1533228100845-08145b01de14?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-006.jpg'
             ],
             [
                 'category_id' => 3,
@@ -288,7 +289,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Redmi Note 13 giá rẻ, màn hình AMOLED 120Hz',
                 'quantity' => 200,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-032.jpg'
             ],
             [
                 'category_id' => 3,
@@ -301,7 +302,7 @@ class ProductSeeder extends Seeder
                 'description' => 'POCO X6 Pro với Dimensity 8300 Ultra, màn hình 1.5K',
                 'quantity' => 100,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1512054502232-10a0a035d672?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-005.jpg'
             ],
             [
                 'category_id' => 3,
@@ -314,7 +315,7 @@ class ProductSeeder extends Seeder
                 'description' => 'POCO F6 với Snapdragon 8s Gen 3, hiệu năng cao',
                 'quantity' => 80,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-003.jpg'
             ],
             [
                 'category_id' => 3,
@@ -327,7 +328,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Redmi 13C giá siêu rẻ, camera 50MP, pin lớn',
                 'quantity' => 250,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-013.jpg'
             ],
 
             // ============ OPPO (category_id = 4) ============
@@ -342,7 +343,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Find X7 Ultra với camera Hasselblad, Dimensity 9300',
                 'quantity' => 25,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-026.jpg'
             ],
             [
                 'category_id' => 4,
@@ -355,7 +356,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Find N3 Flip gập nhỏ gọn, màn hình phụ lớn 3.26 inch',
                 'quantity' => 35,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1614380417943-729b0d6d8d19?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-043.jpg'
             ],
             [
                 'category_id' => 4,
@@ -368,7 +369,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Reno11 Pro camera chân dung Hasselblad, sạc 80W',
                 'quantity' => 70,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1546054454-aa26e2b734c7?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-008.jpg'
             ],
             [
                 'category_id' => 4,
@@ -381,7 +382,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Reno11 5G thiết kế thời trang, camera 50MP OIS',
                 'quantity' => 90,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-014.jpg'
             ],
             [
                 'category_id' => 4,
@@ -394,7 +395,7 @@ class ProductSeeder extends Seeder
                 'description' => 'A98 5G giá tốt, sạc nhanh 67W, màn hình 120Hz',
                 'quantity' => 120,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-032.jpg'
             ],
             [
                 'category_id' => 4,
@@ -407,7 +408,7 @@ class ProductSeeder extends Seeder
                 'description' => 'A79 5G tầm trung, loa stereo, sạc 33W',
                 'quantity' => 150,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-003.jpg'
             ],
             [
                 'category_id' => 4,
@@ -420,7 +421,7 @@ class ProductSeeder extends Seeder
                 'description' => 'A18 giá rẻ, pin khủng 5000mAh, màn hình 90Hz',
                 'quantity' => 200,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-013.jpg'
             ],
             [
                 'category_id' => 4,
@@ -433,7 +434,7 @@ class ProductSeeder extends Seeder
                 'description' => 'A38 thiết kế đẹp, camera 50MP, sạc nhanh 33W',
                 'quantity' => 180,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1533228100845-08145b01de14?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-006.jpg'
             ],
 
             // ============ VIVO (category_id = 5) ============
@@ -448,7 +449,7 @@ class ProductSeeder extends Seeder
                 'description' => 'X100 Pro với camera ZEISS, Dimensity 9300',
                 'quantity' => 30,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-026.jpg'
             ],
             [
                 'category_id' => 5,
@@ -461,7 +462,7 @@ class ProductSeeder extends Seeder
                 'description' => 'X100 camera ZEISS 50MP, màn hình AMOLED 120Hz',
                 'quantity' => 45,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1574944985070-8f3ebc6b79d2?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-014.jpg'
             ],
             [
                 'category_id' => 5,
@@ -474,7 +475,7 @@ class ProductSeeder extends Seeder
                 'description' => 'V30 Pro camera ZEISS, Aura Light Portrait',
                 'quantity' => 60,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1546054454-aa26e2b734c7?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-008.jpg'
             ],
             [
                 'category_id' => 5,
@@ -487,7 +488,7 @@ class ProductSeeder extends Seeder
                 'description' => 'V30e thiết kế mỏng nhẹ, camera 50MP OIS',
                 'quantity' => 80,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-032.jpg'
             ],
             [
                 'category_id' => 5,
@@ -500,7 +501,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Y36 giá tốt, thiết kế thời trang, sạc 44W',
                 'quantity' => 150,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-003.jpg'
             ],
             [
                 'category_id' => 5,
@@ -513,7 +514,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Y27 5G tầm trung, màn hình 90Hz, camera 50MP',
                 'quantity' => 130,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1565849904461-04a58ad377e0?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-013.jpg'
             ],
             [
                 'category_id' => 5,
@@ -526,7 +527,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Y17s giá rẻ, camera kép, pin cả ngày',
                 'quantity' => 200,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1533228100845-08145b01de14?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-006.jpg'
             ],
             [
                 'category_id' => 5,
@@ -539,7 +540,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Y02t giá siêu rẻ, pin lớn, màn hình 6.51 inch',
                 'quantity' => 250,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1512054502232-10a0a035d672?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-005.jpg'
             ],
 
             // ============ ỐP LƯNG (category_id = 6) - Thêm ============
@@ -554,7 +555,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Ốp lưng trong suốt chính hãng Apple, MagSafe, chống ố vàng',
                 'quantity' => 100,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1601593346740-925612772716?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-030.jpg'
             ],
             [
                 'category_id' => 6,
@@ -567,7 +568,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Ốp lưng chống sốc viền cứng, lưng trong suốt',
                 'quantity' => 200,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1585060544812-6b45742d762f?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-018.jpg'
             ],
             [
                 'category_id' => 6,
@@ -580,7 +581,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Ốp lưng bảo vệ camera với nắp trượt',
                 'quantity' => 150,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1609081219090-a6d81d3085bf?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-037.jpg'
             ],
 
             // ============ CÁP SẠC (category_id = 7) - Thêm ============
@@ -595,7 +596,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Sạc không dây MagSafe chính hãng Apple 15W',
                 'quantity' => 80,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1622766815178-641bef2b8d73?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-030.jpg'
             ],
             [
                 'category_id' => 7,
@@ -608,7 +609,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Củ sạc GaN siêu nhỏ 65W, 2 cổng USB-C',
                 'quantity' => 100,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-016.jpg'
             ],
             [
                 'category_id' => 7,
@@ -621,7 +622,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Cáp USB-C sạc nhanh 100W, dây dù siêu bền',
                 'quantity' => 200,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1606292943133-cc919bba3fec?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-037.jpg'
             ],
 
             // ============ TAI NGHE (category_id = 8) - Thêm ============
@@ -636,7 +637,7 @@ class ProductSeeder extends Seeder
                 'description' => 'AirPods 4 với chống ồn chủ động, chip H2',
                 'quantity' => 60,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-036.jpg'
             ],
             [
                 'category_id' => 8,
@@ -649,7 +650,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Tai nghe over-ear cao cấp Apple, ANC, Spatial Audio',
                 'quantity' => 25,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1625245488600-f03fef636a3c?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-042.jpg'
             ],
             [
                 'category_id' => 8,
@@ -662,7 +663,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Tai nghe Bose chống ồn đỉnh cao, CustomTune',
                 'quantity' => 35,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-010.jpg'
             ],
             [
                 'category_id' => 8,
@@ -675,7 +676,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Tai nghe TWS giá rẻ với ANC, aptX Lossless',
                 'quantity' => 150,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-021.jpg'
             ],
 
             // ============ SẠC DỰ PHÒNG (category_id = 9) - Thêm ============
@@ -690,7 +691,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Pin sạc cao cấp, sạc được laptop 250W, 3 cổng',
                 'quantity' => 30,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-039.jpg'
             ],
             [
                 'category_id' => 9,
@@ -703,7 +704,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Pin sạc siêu mỏng như dao, sạc nhanh 100W',
                 'quantity' => 80,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-020.jpg'
             ],
             [
                 'category_id' => 9,
@@ -716,7 +717,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Pin sạc MagSafe cho iPhone, nhỏ gọn tiện lợi',
                 'quantity' => 120,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-016.jpg'
             ],
 
             // ============ MIẾNG DÁN (category_id = 10) - Thêm ============
@@ -731,7 +732,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Kính cường lực chính hãng Belkin, dễ dán, chống trầy',
                 'quantity' => 150,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1601593346740-925612772716?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-030.jpg'
             ],
             [
                 'category_id' => 10,
@@ -744,7 +745,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Kính cường lực chống nhìn trộm 180 độ',
                 'quantity' => 200,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1585060544812-6b45742d762f?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-018.jpg'
             ],
 
             // ============ GIÁ ĐỠ (category_id = 11) - Thêm ============
@@ -759,7 +760,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Đế sạc iPhone, Apple Watch, AirPods cùng lúc',
                 'quantity' => 40,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1622766815178-641bef2b8d73?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-030.jpg'
             ],
             [
                 'category_id' => 11,
@@ -772,7 +773,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Gimbal chống rung 3 trục, tự động theo dõi đối tượng',
                 'quantity' => 35,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1605648916361-9bc12ad6a569?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-034.jpg'
             ],
             [
                 'category_id' => 11,
@@ -785,7 +786,7 @@ class ProductSeeder extends Seeder
                 'description' => 'Kẹp điện thoại xe đạp/xe máy, khóa chắc chắn',
                 'quantity' => 80,
                 'status' => 'active',
-                'image' => 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=500&fit=crop'
+                'image' => 'storage/product-images/product-image-011.jpg'
             ],
         ];
 
@@ -795,15 +796,77 @@ class ProductSeeder extends Seeder
             unset($productData['image']);
             
             $product = Product::create($productData);
-            
-            ProductImage::create([
-                'product_id' => $product->id,
-                'image_url' => $image,
-            ]);
+
+            foreach ($this->buildImageUrls($productData, $image) as $imageUrl) {
+                ProductImage::create([
+                    'product_id' => $product->id,
+                    'image_url' => $imageUrl,
+                ]);
+            }
             
             $count++;
         }
 
         echo "Đã thêm {$count} sản phẩm mới!\n";
     }
+
+    private function buildImageUrls(array $productData, ?string $primaryImage = null): array
+    {
+        $name = Str::of($productData['name'])->lower()->ascii()->toString();
+        $brand = Str::of($productData['brand'] ?? 'smartphone')->lower()->ascii()->toString();
+
+        $imageSets = [
+            'iphone' => [
+                'storage/product-images/product-image-025.jpg',
+                'storage/product-images/product-image-002.jpg',
+                'storage/product-images/product-image-047.jpg',
+            ],
+            'samsung' => [
+                'storage/product-images/product-image-041.jpg',
+                'storage/product-images/product-image-019.jpg',
+                'storage/product-images/product-image-044.jpg',
+            ],
+            'xiaomi' => [
+                'storage/product-images/product-image-029.jpg',
+                'storage/product-images/product-image-015.jpg',
+                'storage/product-images/product-image-004.jpg',
+            ],
+            'oppo' => [
+                'storage/product-images/product-image-027.jpg',
+                'storage/product-images/product-image-033.jpg',
+                'storage/product-images/product-image-009.jpg',
+            ],
+            'vivo' => [
+                'storage/product-images/product-image-027.jpg',
+                'storage/product-images/product-image-033.jpg',
+                'storage/product-images/product-image-007.jpg',
+            ],
+        ];
+
+        $urls = [];
+        if ($primaryImage) {
+            $urls[] = $primaryImage;
+        }
+
+        $selectedImages = [
+            'storage/product-images/product-image-033.jpg',
+            'storage/product-images/product-image-027.jpg',
+            'storage/product-images/product-image-007.jpg',
+        ];
+
+        foreach ($imageSets as $needle => $set) {
+            if (Str::contains($name, $needle)) {
+                $selectedImages = $set;
+                break;
+            }
+        }
+
+        foreach ($selectedImages as $imageUrl) {
+            $urls[] = $imageUrl;
+        }
+
+        return array_values(array_unique($urls));
+    }
 }
+
+

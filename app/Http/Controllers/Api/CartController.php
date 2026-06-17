@@ -13,8 +13,8 @@ class CartController extends Controller
 {
     public function index(Request $request)
     {
-        $cart = Cart::with('items.product.images')
-            ->firstOrCreate(['user_id' => $request->user()->id]);
+        $cart = Cart::with('items.product.images')->with('cartCombos.combo.products')->
+            firstOrCreate(['user_id' => $request->user()->id]);
 
         // Format items để frontend dễ sử dụng
         $items = $cart->items->filter(function ($item) {
@@ -42,8 +42,9 @@ class CartController extends Controller
     public function addItem(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1',
+            'product_id' => 'nullable|exists:products,id',
+            'quantity' => 'nullable|integer|min:1',
+            'combo_id' => 'nullable|exists:combos,id',
         ]);
 
         if ($validator->fails()) {
@@ -54,29 +55,80 @@ class CartController extends Controller
             ], 422);
         }
 
-        $product = Product::find($request->product_id);
+        $cart = Cart::firstOrCreate(['user_id' => $request->user()->id]);
 
-        if ($product->quantity < $request->quantity) {
+        // If combo_id provided, add all combo products and record cart_combo
+        if ($request->filled('combo_id')) {
+            $combo = \App\Models\Combo::with('products')->find($request->combo_id);
+            if (!$combo) {
+                return response()->json(['success' => false, 'message' => 'Combo không tồn tại'], 404);
+            }
+
+            $comboQty = max(1, (int) $request->input('quantity', 1));
+
+            // check stock for each product
+            foreach ($combo->products as $p) {
+                $need = ($p->pivot->quantity ?? 1) * $comboQty;
+                if ($p->quantity < $need) {
+                    return response()->json(['success' => false, 'message' => "Sản phẩm {$p->name} không đủ số lượng"], 400);
+                }
+            }
+
+            // create or increment cart items
+            foreach ($combo->products as $p) {
+                $need = ($p->pivot->quantity ?? 1) * $comboQty;
+                $cartItem = CartItem::where('cart_id', $cart->id)
+                    ->where('product_id', $p->id)
+                    ->first();
+
+                if ($cartItem) {
+                    $cartItem->quantity += $need;
+                    $cartItem->save();
+                } else {
+                    CartItem::create([
+                        'cart_id' => $cart->id,
+                        'product_id' => $p->id,
+                        'quantity' => $need,
+                    ]);
+                }
+            }
+
+            // record cart_combo
+            \App\Models\CartCombo::create([
+                'cart_id' => $cart->id,
+                'combo_id' => $combo->id,
+                'quantity' => $comboQty,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã thêm combo vào giỏ hàng'
+            ]);
+        }
+
+        // Single product add
+        $product = Product::find($request->product_id);
+        $quantity = max(1, (int) $request->input('quantity', 1));
+
+        if ($product->quantity < $quantity) {
             return response()->json([
                 'success' => false,
                 'message' => 'Số lượng sản phẩm không đủ'
             ], 400);
         }
 
-        $cart = Cart::firstOrCreate(['user_id' => $request->user()->id]);
-
         $cartItem = CartItem::where('cart_id', $cart->id)
             ->where('product_id', $request->product_id)
             ->first();
 
         if ($cartItem) {
-            $cartItem->quantity += $request->quantity;
+            $cartItem->quantity += $quantity;
             $cartItem->save();
         } else {
             CartItem::create([
                 'cart_id' => $cart->id,
                 'product_id' => $request->product_id,
-                'quantity' => $request->quantity,
+                'quantity' => $quantity,
             ]);
         }
 

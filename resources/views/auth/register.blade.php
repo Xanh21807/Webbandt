@@ -322,13 +322,9 @@
         
         <!-- Social Register -->
         <div class="social-buttons">
-            <button type="button" class="btn-social google">
+            <button type="button" class="btn-social google"onclick="window.location.href='{{ route('auth.google') }}'">
                 <i class="fab fa-google"></i>
-                Đăng ký bằng Google
-            </button>
-            <button type="button" class="btn-social facebook">
-                <i class="fab fa-facebook-f"></i>
-                Đăng ký bằng Facebook
+                Đăng kí bằng Google
             </button>
         </div>
         

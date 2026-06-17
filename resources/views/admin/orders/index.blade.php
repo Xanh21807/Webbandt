@@ -752,6 +752,9 @@ async function loadOrders(page = 1) {
                                 <i class="${getPaymentIcon(order.payment?.payment_method)}"></i>
                                 <span>${getPaymentText(order.payment?.payment_method)}</span>
                             </div>
+                            <div class="payment-status ${order.payment?.status || 'pending'}">
+                                ${getPaymentStatusText(order.payment?.status)}
+                            </div>
                         </td>
                         <td>
                             <span class="status-badge ${order.status}" onclick="openStatusModal(${order.id}, '${order.status}')">${getStatusText(order.status)}</span>
@@ -768,6 +771,11 @@ async function loadOrders(page = 1) {
                                     </button>
                                     <button class="btn-cancel" onclick="cancelOrder(${order.id})" title="Hủy">
                                         <i class="fas fa-times"></i>
+                                    </button>
+                                ` : ''}
+                                ${(order.payment?.status !== 'completed' && ['banking', 'wallet'].includes(order.payment?.payment_method)) ? `
+                                    <button class="btn-confirm" onclick="confirmPayment(${order.id})" title="Xác nhận đã thanh toán">
+                                        <i class="fas fa-qrcode"></i>
                                     </button>
                                 ` : ''}
                                 ${order.status === 'paid' ? `
@@ -828,6 +836,15 @@ function getPaymentText(method) {
         'vnpay': 'VNPay'
     };
     return texts[method] || method;
+}
+
+function getPaymentStatusText(status) {
+    const texts = {
+        'pending': 'Chờ thanh toán',
+        'completed': 'Đã thanh toán',
+        'failed': 'Thanh toán lỗi'
+    };
+    return texts[status] || 'Chờ thanh toán';
 }
 
 function getStatusText(status) {
@@ -1028,6 +1045,35 @@ async function updateOrderStatus() {
         }
     } catch (error) {
         console.error('Error updating status:', error);
+    }
+}
+
+async function confirmPayment(id) {
+    if (!confirm('Xác nhận đơn hàng này đã được thanh toán?')) return;
+
+    const token = localStorage.getItem('auth_token');
+
+    try {
+        const response = await fetch(`/api/admin/orders/${id}/confirm-payment`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            alert('Đã xác nhận thanh toán thành công!');
+            loadOrders(currentPage);
+            loadOrderCounts();
+        } else {
+            const data = await response.json().catch(() => ({}));
+            alert(data.message || 'Không thể xác nhận thanh toán');
+        }
+    } catch (error) {
+        console.error('Error confirming payment:', error);
+        alert('Không thể xác nhận thanh toán');
     }
 }
 

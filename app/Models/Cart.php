@@ -25,11 +25,33 @@ class Cart extends Model
 
     public function getTotalAttribute()
     {
-        return $this->items->sum(function ($item) {
+        $subtotal = $this->items->sum(function ($item) {
             if ($item->product) {
                 return $item->product->price * $item->quantity;
             }
             return 0;
         });
+
+        // apply combo discounts
+        $comboDiscount = 0;
+        if (method_exists($this, 'cartCombos')) {
+            foreach ($this->cartCombos as $cc) {
+                $combo = $cc->combo;
+                if (!$combo) continue;
+                $comboSum = 0;
+                foreach ($combo->products as $p) {
+                    $qty = $p->pivot->quantity * $cc->quantity;
+                    $comboSum += ($p->price ?? 0) * $qty;
+                }
+                $comboDiscount += $comboSum * (($combo->discount_percent ?? 0) / 100);
+            }
+        }
+
+        return max(0, $subtotal - $comboDiscount);
+    }
+
+    public function cartCombos()
+    {
+        return $this->hasMany(\App\Models\CartCombo::class);
     }
 }

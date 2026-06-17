@@ -6,22 +6,31 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Favorite;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
     public function index(Request $request)
     {
         $query = Product::with(['category', 'images', 'reviews'])
+            ->withCount('reviews')
+            ->withAvg('reviews as average_rating', 'rating')
             ->active();
+        // Filter - lấy tất cả các filter từ request
+        $filters = [];
 
         // Search - hỗ trợ cả 'search' và 'keyword'
         $searchTerm = $request->input('search') ?? $request->input('keyword');
         if ($searchTerm) {
-            $query->search($searchTerm);
+            // parse natural language into filters + keyword
+            $parsed = \App\Services\SearchParser::parse($searchTerm);
+            if (!empty($parsed['filters'])) {
+                $filters = array_merge($filters, $parsed['filters']);
+            }
+            if (!empty($parsed['keyword'])) {
+                $query->search($parsed['keyword']);
+            }
         }
-
-        // Filter - lấy tất cả các filter từ request
-        $filters = [];
         
         if ($request->filled('brand')) {
             $filters['brand'] = $request->input('brand');
@@ -41,27 +50,47 @@ class ProductController extends Controller
         if ($request->filled('category_id')) {
             $filters['category_id'] = $request->input('category_id');
         }
+        if ($request->filled('category') && ! $request->filled('category_id')) {
+            $categoryValue = $request->input('category');
+
+            if (is_numeric($categoryValue)) {
+                $filters['category_id'] = (int) $categoryValue;
+            } else {
+                $category = \App\Models\Category::where('name', 'like', '%' . $categoryValue . '%')->first();
+
+                if ($category) {
+                    $filters['category_id'] = $category->id;
+                }
+            }
+        }
         if ($request->filled('price_range')) {
             $filters['price_range'] = $request->input('price_range');
         }
         
         $query->filter($filters);
 
-        // Sort
-        if ($request->has('sort_by')) {
-            switch ($request->sort_by) {
-                case 'price_asc':
-                    $query->orderBy('price', 'asc');
-                    break;
-                case 'price_desc':
-                    $query->orderBy('price', 'desc');
-                    break;
-                case 'newest':
-                    $query->orderBy('created_at', 'desc');
-                    break;
-                default:
-                    $query->orderBy('id', 'desc');
-            }
+        // Sort: accept both `sort_by` and legacy `sort`
+        $sortBy = $request->input('sort_by', $request->input('sort', 'newest'));
+
+        switch ($sortBy) {
+            case 'price_asc':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_desc':
+                $query->orderBy('price', 'desc');
+                break;
+            case 'name_asc':
+                $query->orderBy('name', 'asc');
+                break;
+            case 'bestselling':
+                $query->withCount('orderItems')
+                    ->orderBy('order_items_count', 'desc')
+                    ->orderBy('created_at', 'desc');
+                break;
+            case 'newest':
+            default:
+                $query->orderBy('created_at', 'desc');
+                break;
         }
 
         $products = $query->paginate($request->get('per_page', 15));
@@ -117,9 +146,11 @@ class ProductController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $product = Product::with(['category', 'images', 'reviews.user'])
+            ->withCount('reviews')
+            ->withAvg('reviews as average_rating', 'rating')
             ->find($id);
 
         if (!$product) {
@@ -129,12 +160,90 @@ class ProductController extends Controller
             ], 404);
         }
 
+        // record view behavior for authenticated users
+        if ($request->user()) {
+            \App\Models\UserBehavior::create([
+                'user_id' => $request->user()->id,
+                'product_id' => $product->id,
+                'type' => 'view',
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
                 'product' => $product
             ]
         ]);
+    }
+
+    /**
+     * Return accessory suggestions for a given product
+     */
+    public function accessories(Request $request, $id)
+    {
+        try {
+            $product = Product::find($id);
+            if (!$product) {
+                return response()->json(['success' => false, 'message' => 'Product not found'], 404);
+            }
+
+            $accessoryNames = ['Ốp lưng','Cáp sạc','Tai nghe','Sạc dự phòng','Miếng dán màn hình','Giá đỡ điện thoại'];
+            $accessoryCategoryIds = \App\Models\Category::whereIn('name', $accessoryNames)->pluck('id')->toArray();
+
+            if (empty($accessoryCategoryIds)) {
+                return response()->json(['success' => true, 'data' => []]);
+            }
+
+            // Use relationship count to avoid GROUP BY raw queries
+            $baseQuery = Product::with('images')
+                ->withCount(['orderItems as sales_count'])
+                ->whereIn('category_id', $accessoryCategoryIds)
+                ->where('id', '<>', $product->id)
+                ->orderByDesc('sales_count');
+
+            if ($product->brand) {
+                $sameBrand = (clone $baseQuery)->where('brand', $product->brand)->limit(6)->get();
+                $needed = 6 - $sameBrand->count();
+                if ($needed > 0) {
+                    $fill = $baseQuery->where('brand', '<>', $product->brand)->limit($needed)->get();
+                    $result = $sameBrand->merge($fill);
+                } else {
+                    $result = $sameBrand;
+                }
+            } else {
+                $result = $baseQuery->limit(6)->get();
+            }
+
+            return response()->json(['success' => true, 'data' => $result]);
+        } catch (\Exception $ex) {
+            Log::error('Error in accessories(): ' . $ex->getMessage(), ['exception' => $ex]);
+            return response()->json(['success' => false, 'message' => 'Lỗi server khi lấy phụ kiện'], 500);
+        }
+    }
+
+    /**
+     * Return combos that include this product
+     */
+    public function combos(Request $request, $id)
+    {
+        try {
+            $product = Product::find($id);
+            if (!$product) {
+                return response()->json(['success' => false, 'data' => []], 404);
+            }
+
+            $combos = \App\Models\Combo::with('products')
+                ->whereHas('products', function ($q) use ($id) {
+                    $q->where('products.id', $id);
+                })
+                ->get();
+
+            return response()->json(['success' => true, 'data' => $combos]);
+        } catch (\Exception $ex) {
+            Log::error('Error in combos(): ' . $ex->getMessage(), ['exception' => $ex]);
+            return response()->json(['success' => false, 'data' => []], 500);
+        }
     }
 
     public function addToFavorites(Request $request, $productId)

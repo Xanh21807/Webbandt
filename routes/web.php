@@ -1,7 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\LoginGoogleController;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\PaymentController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes - XanhStore
@@ -17,7 +19,12 @@ Route::get('/', function () {
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
-
+//Login with Google
+Route::get('/auth/google', [LoginGoogleController::class, 'redirectToGoogle'])
+    ->name('auth.google');
+Route::get('/auth/google/callback', [LoginGoogleController::class, 'handleGoogleCallback']);
+Route::get('/logout', [LoginGoogleController::class, 'logout'])->name('logout');
+// Registration page
 Route::get('/register', function () {
     return view('auth.register');
 })->name('register');
@@ -98,4 +105,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/statistics', function () {
         return view('admin.statistics.index');
     })->name('statistics.index');
+
 });
+// Payment routes
+Route::post('/payment/create', [PaymentController::class, 'createPayment']);
+Route::get('/payment/success', [PaymentController::class, 'success'])
+->name('payment.success');
+
+Route::get('/payment/cancel', [PaymentController::class, 'cancel'])
+->name('payment.cancel');
+

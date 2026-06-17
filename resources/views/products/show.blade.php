@@ -62,6 +62,7 @@
                     <!-- Write Review Form -->
                     <div class="write-review" id="writeReviewSection" style="display: none;">
                         <h3>Viết đánh giá của bạn</h3>
+                        <div id="reviewAccessNotice" class="review-access-notice" style="display: none;"></div>
                         <form id="reviewForm">
                             <div class="form-group">
                                 <label>Đánh giá</label>
@@ -94,6 +95,10 @@
                 <div class="product-card skeleton"></div>
                 <div class="product-card skeleton"></div>
                 <div class="product-card skeleton"></div>
+            </div>
+            <div id="comboActions" style="margin-top:16px; display:flex; gap:12px; align-items:center;">
+                <button id="addComboBtn" class="btn btn-primary" onclick="addComboToCart()">Thêm mua kèm vào giỏ (0)</button>
+                <button id="clearComboBtn" class="btn" onclick="clearComboSelection()" style="background:#f3f4f6;">Bỏ chọn</button>
             </div>
         </section>
     </div>
@@ -602,6 +607,26 @@
     border-top: 1px solid #e5e7eb;
 }
 
+
+.review-access-notice {
+    margin-bottom: 16px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.review-access-notice.success {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.review-access-notice.warning {
+    background: #fff7ed;
+    color: #9a3412;
+    border: 1px solid #fed7aa;
+}
 .write-review h3 {
     font-size: 18px;
     margin-bottom: 20px;
@@ -721,6 +746,7 @@
     line-height: 1.4;
     margin: 0;
     display: -webkit-box;
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -789,6 +815,24 @@
     padding: 0 16px 16px;
     display: flex;
     gap: 8px;
+}
+
+.product-card.selected-combo {
+    box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+    transform: translateY(-6px);
+    border: 2px solid rgba(99,102,241,0.12);
+}
+
+.combo-select {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 20;
+}
+
+.combo-select input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
 }
 
 .product-card .product-actions .btn {
@@ -897,6 +941,7 @@ async function loadProduct() {
         renderProduct();
         loadReviews();
         loadRelatedProducts();
+        loadCombos();
     } catch (error) {
         console.error('Error loading product:', error);
     }
@@ -911,11 +956,14 @@ function renderProduct() {
     // Handle images - can be array of objects with image_url or array of strings
     let images = [];
     if (product.images && product.images.length > 0) {
-        images = product.images.map(img => typeof img === 'object' ? img.image_url : img);
+        images = product.images.map((img, index) => {
+            const imageUrl = typeof img === 'object' ? img.image_url : img;
+            return appendImageVersion(imageUrl, `${product.id}-${index}`);
+        });
     } else if (product.image) {
-        images = [product.image];
+        images = [appendImageVersion(product.image, product.id)];
     } else {
-        images = ['https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&h=500&fit=crop'];
+        images = [appendImageVersion(getProductFallbackImage(product.name), product.id)];
     }
     
     const hasDiscount = product.sale_price && product.sale_price < product.price;
@@ -1052,16 +1100,25 @@ function addToCart(productId) {
     const qty = quantity || 1;
     
     if (!token) {
-        // Lưu vào localStorage cho guest
+        // Lưu vào localStorage cho guest, kèm tên/giá/ảnh nếu có sẵn
         let cart = JSON.parse(localStorage.getItem('guest_cart') || '[]');
         const existingItem = cart.find(item => item.product_id == productId);
         
         if (existingItem) {
-            existingItem.quantity += qty;
+            existingItem.quantity = (Number(existingItem.quantity) || 0) + qty;
         } else {
-            cart.push({ product_id: productId, quantity: qty });
+            cart.push({ product_id: productId, quantity: qty, name: currentProduct?.name ?? null, price: currentProduct?.price ?? null, image: currentProduct?.images?.[0]?.image_url ?? null });
         }
         
+        // normalize and coerce types
+        cart = cart.map(it => ({
+            product_id: it.product_id,
+            quantity: Number(it.quantity) || 1,
+            name: it.name ?? null,
+            price: Number(it.price) || 0,
+            image: it.image ?? null
+        }));
+
         localStorage.setItem('guest_cart', JSON.stringify(cart));
         showNotification('Đã thêm vào giỏ hàng!', 'success');
         updateCartBadge();
@@ -1230,6 +1287,7 @@ async function loadReviews() {
         const response = await fetch(`/api/products/${productId}/reviews`);
         const data = await response.json();
         const reviews = data.data || [];
+        const summary = data.summary || {};
         
         document.getElementById('reviewCount').textContent = reviews.length;
         
@@ -1240,7 +1298,7 @@ async function loadReviews() {
             ratingDist[r.rating - 1]++;
             totalRating += r.rating;
         });
-        const avgRating = reviews.length ? (totalRating / reviews.length).toFixed(1) : 0;
+        const avgRating = summary.average ?? (reviews.length ? (totalRating / reviews.length).toFixed(1) : 0);
         
         // Render summary
         document.getElementById('reviewsSummary').innerHTML = `
@@ -1286,12 +1344,66 @@ async function loadReviews() {
             `).join('');
         }
         
-        // Show write review if logged in
-        if (localStorage.getItem('auth_token')) {
-            document.getElementById('writeReviewSection').style.display = 'block';
-        }
+        await loadReviewEligibility();
     } catch (error) {
         console.error('Error loading reviews:', error);
+    }
+}
+
+// Check whether the current user can review this product
+async function loadReviewEligibility() {
+    const section = document.getElementById('writeReviewSection');
+    const notice = document.getElementById('reviewAccessNotice');
+    const form = document.getElementById('reviewForm');
+
+    if (!section || !notice || !form) {
+        return;
+    }
+
+    const token = localStorage.getItem('auth_token');
+
+    if (!token) {
+        section.style.display = 'block';
+        notice.style.display = 'block';
+        notice.className = 'review-access-notice warning';
+        notice.textContent = 'Bạn cần đăng nhập và đã mua sản phẩm này để gửi đánh giá.';
+        form.style.display = 'none';
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/products/${productId}/review-eligibility`, {
+            headers: {
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+        const canReview = !!data.data?.can_review;
+        const hasReviewed = !!data.data?.has_reviewed;
+
+        section.style.display = 'block';
+        notice.style.display = 'block';
+
+        if (canReview) {
+            notice.className = 'review-access-notice success';
+            notice.textContent = hasReviewed
+                ? 'Bạn đã gửi đánh giá cho sản phẩm này. Bạn có thể cập nhật lại đánh giá bên dưới.'
+                : 'Bạn đã mua sản phẩm này. Hãy chia sẻ trải nghiệm của bạn.';
+            form.style.display = 'block';
+        } else {
+            notice.className = 'review-access-notice warning';
+            notice.textContent = 'Bạn chỉ có thể đánh giá sản phẩm đã mua.';
+            form.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading review eligibility:', error);
+        section.style.display = 'block';
+        notice.style.display = 'block';
+        notice.className = 'review-access-notice warning';
+        notice.textContent = 'Không thể kiểm tra quyền đánh giá ngay lúc này.';
+        form.style.display = 'none';
     }
 }
 
@@ -1299,9 +1411,9 @@ async function loadReviews() {
 async function loadRelatedProducts() {
     try {
         const categoryId = currentProduct?.category_id;
-        const response = await fetch(`/api/products?category=${categoryId || ''}&limit=4&exclude=${productId}`);
-        const result = await response.json();
-        const products = result.data?.data || result.data || [];
+            const response = await fetch(`/api/products/${productId}/accessories`);
+            const result = await response.json();
+            const products = result.data || result.data?.data || [];
         
         const container = document.getElementById('relatedProducts');
         if (products.length > 0) {
@@ -1314,13 +1426,86 @@ async function loadRelatedProducts() {
     }
 }
 
+// Load combos for this product
+async function loadCombos() {
+    try {
+        const res = await fetch(`/api/products/${productId}/combos`);
+        const data = await res.json();
+        const combos = data.data || [];
+        if (!combos.length) return;
+
+        // create combo section above related products
+        const container = document.getElementById('relatedProducts');
+        const comboHtml = combos.map(combo => {
+            // calculate original sum and discounted price
+            let sum = 0;
+            const items = combo.products.map(p => {
+                sum += (p.price || 0) * (p.pivot?.quantity || 1);
+                return p;
+            });
+            const discount = combo.discount_percent || 0;
+            const discounted = Math.round(sum * (1 - discount / 100));
+
+            return `
+                <div class="product-card" style="position:relative; border:2px solid #eef2ff;">
+                    <div style="padding:16px;">
+                        <h3 style="margin:0 0 8px 0">${combo.name} <small style="color:#6b7280; font-weight:500">- ${discount}%</small></h3>
+                        <div style="display:flex; gap:12px; align-items:center; margin-bottom:8px;">
+                            ${items.slice(0,3).map(p=>`<img src="${getProductFallbackImage(p.name,p.images)}" style="width:64px;height:64px;object-fit:cover;border-radius:8px">`).join('')}
+                        </div>
+                        <div style="margin-bottom:8px;">Giá combo: <strong>${formatPrice(discounted)}₫</strong> <span style="text-decoration:line-through; color:#9ca3af; margin-left:8px">${formatPrice(sum)}₫</span></div>
+                        <button class="btn btn-primary" onclick="addComboById(${combo.id})">Thêm combo vào giỏ</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // insert at top of relatedProducts
+        container.insertAdjacentHTML('afterbegin', comboHtml);
+    } catch (err) {
+        console.error('Error loading combos:', err);
+    }
+}
+
+async function addComboById(comboId) {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+        showNotification('Vui lòng đăng nhập để thêm combo vào giỏ', 'warning');
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ combo_id: comboId, quantity: 1 })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            showNotification('Đã thêm combo vào giỏ hàng!', 'success');
+            updateCartBadge();
+        } else {
+            showNotification(data.message || 'Không thể thêm combo', 'error');
+        }
+    } catch (err) {
+        console.error('Add combo err:', err);
+        showNotification('Lỗi khi thêm combo', 'error');
+    }
+}
+
 // Create product card for related products
 function createProductCard(product) {
-    const imageUrl = product.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=300&h=300&fit=crop';
+    const imageUrl = getProductFallbackImage(product.name, product.images);
     const discountPrice = Math.round(product.price * 0.85);
     
     return `
-        <div class="product-card">
+        <div class="product-card" style="position:relative;">
+            <label class="combo-select"><input type="checkbox" data-pid="${product.id}" onchange="toggleAccessorySelection(${product.id}, this)"></label>
             <div class="product-badges">
                 <span class="badge badge-installment"><i class="fas fa-bolt"></i> Trả góp 0%</span>
                 <span class="badge badge-gift"><i class="fas fa-gift"></i> Quà 2Tr</span>
@@ -1355,6 +1540,147 @@ function createProductCard(product) {
             </div>
         </div>
     `;
+}
+
+// Combo selection state
+const selectedAccessories = new Set();
+
+function toggleAccessorySelection(productId, checkbox) {
+    if (checkbox.checked) selectedAccessories.add(productId); else selectedAccessories.delete(productId);
+    updateComboUI();
+}
+
+function updateComboUI() {
+    const btn = document.getElementById('addComboBtn');
+    if (btn) btn.textContent = `Thêm mua kèm vào giỏ (${selectedAccessories.size})`;
+    document.querySelectorAll('.product-card').forEach(card => {
+        const cb = card.querySelector('input[type=checkbox]');
+        if (!cb) return;
+        const pid = parseInt(cb.dataset.pid);
+        if (selectedAccessories.has(pid)) {
+            card.classList.add('selected-combo');
+            cb.checked = true;
+        } else {
+            card.classList.remove('selected-combo');
+            cb.checked = false;
+        }
+    });
+}
+
+function clearComboSelection() {
+    selectedAccessories.clear();
+    updateComboUI();
+}
+
+async function addComboToCart() {
+    if (selectedAccessories.size === 0) {
+        showNotification('Chưa chọn sản phẩm mua kèm', 'warning');
+        return;
+    }
+
+    const ids = Array.from(selectedAccessories);
+    const token = localStorage.getItem('auth_token');
+
+    if (!token) {
+        // guest cart in localStorage - fetch metadata for each accessory to avoid NaN
+        let cart = JSON.parse(localStorage.getItem('guest_cart') || '[]');
+        try {
+            await Promise.all(ids.map(async (id) => {
+                const existing = cart.find(i => i.product_id == id);
+                if (existing) { existing.quantity = Number(existing.quantity) + 1; return; }
+                try {
+                    const res = await fetch(`/api/products/${id}`);
+                    if (!res.ok) {
+                        cart.push({ product_id: id, quantity: 1, name: null, price: 0, image: null });
+                        return;
+                    }
+                    const data = await res.json();
+                    const p = (data.data && data.data.product) ? data.data.product : (data.data && data.data.id ? data.data : (data.product || data));
+                    cart.push({
+                        product_id: id,
+                        quantity: 1,
+                        name: p?.name ?? null,
+                        price: Number(p?.price) || 0,
+                        image: (p?.images && p.images[0] && (p.images[0].image_url || p.images[0].path)) || null
+                    });
+                } catch (e) {
+                    cart.push({ product_id: id, quantity: 1, name: null, price: 0, image: null });
+                }
+            }));
+
+            // normalize cart entries
+            cart = cart.map(it => ({
+                product_id: it.product_id,
+                quantity: Number(it.quantity) || 1,
+                name: it.name ?? null,
+                price: Number(it.price) || 0,
+                image: it.image ?? null
+            }));
+
+            localStorage.setItem('guest_cart', JSON.stringify(cart));
+            showNotification('Đã thêm mua kèm vào giỏ hàng!', 'success');
+            clearComboSelection();
+            updateCartBadge();
+            return;
+        } catch (e) {
+            console.error('Error while adding accessories to guest cart:', e);
+        }
+    }
+
+    try {
+        await Promise.all(ids.map(id => fetch('/api/cart/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ product_id: id, quantity: 1 })
+        })));
+
+        showNotification('Đã thêm mua kèm vào giỏ hàng!', 'success');
+        clearComboSelection();
+        updateCartBadge();
+    } catch (err) {
+        console.error('Combo add error:', err);
+        showNotification('Lỗi khi thêm mua kèm', 'error');
+    }
+}
+
+function getProductFallbackImage(name, images = []) {
+    if (images.length > 0) {
+        const firstImage = images[0];
+        return typeof firstImage === 'object' ? firstImage.image_url : firstImage;
+    }
+
+    const normalizedName = (name || '').toLowerCase();
+
+    if (normalizedName.includes('iphone')) {
+        return 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=500&h=500&fit=crop';
+    }
+
+    if (normalizedName.includes('samsung')) {
+        return 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=500&h=500&fit=crop';
+    }
+
+    if (normalizedName.includes('xiaomi')) {
+        return 'https://images.unsplash.com/photo-1598327106026-d9521da673d1?w=500&h=500&fit=crop';
+    }
+
+    if (normalizedName.includes('oppo')) {
+        return 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=500&h=500&fit=crop';
+    }
+
+    if (normalizedName.includes('vivo')) {
+        return 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=500&h=500&fit=crop';
+    }
+
+    return 'https://placehold.co/500x500/f3f4f6/111827?text=XanhStore';
+}
+
+function appendImageVersion(url, version) {
+    if (!url) return url;
+    return url.includes('?') ? `${url}&v=${version}` : `${url}?v=${version}`;
 }
 
 // Helper functions
@@ -1415,8 +1741,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('reviewForm')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            alert('Vui lòng đăng nhập để đánh giá sản phẩm');
+            return;
+        }
+
         if (!selectedRating) {
             alert('Vui lòng chọn số sao đánh giá');
+            return;
+        }
+
+        const comment = document.getElementById('reviewComment').value.trim();
+        if (!comment) {
+            alert('Vui lòng nhập nội dung đánh giá');
             return;
         }
         
@@ -1426,16 +1764,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     rating: selectedRating,
-                    comment: document.getElementById('reviewComment').value
+                    comment
                 })
             });
             
             if (response.ok) {
-                alert('Cảm ơn bạn đã đánh giá!');
+                const data = await response.json();
+                alert(data.message || 'Cảm ơn bạn đã đánh giá!');
                 loadReviews();
                 this.reset();
                 selectedRating = 0;

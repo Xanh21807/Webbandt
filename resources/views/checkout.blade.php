@@ -96,41 +96,8 @@
                             <i class="fas fa-check-circle payment-check"></i>
                         </label>
                         
-                        <label class="payment-option">
-                            <input type="radio" name="payment" value="momo">
-                            <div class="payment-icon" style="background: #a50064;">
-                                <i class="fas fa-wallet"></i>
-                            </div>
-                            <div class="payment-info">
-                                <span class="payment-name">Ví MoMo</span>
-                                <span class="payment-desc">Thanh toán qua ví điện tử MoMo</span>
-                            </div>
-                            <i class="fas fa-check-circle payment-check"></i>
-                        </label>
-                        
-                        <label class="payment-option">
-                            <input type="radio" name="payment" value="vnpay">
-                            <div class="payment-icon" style="background: #0066b3;">
-                                <i class="fas fa-credit-card"></i>
-                            </div>
-                            <div class="payment-info">
-                                <span class="payment-name">VNPay</span>
-                                <span class="payment-desc">Thanh toán qua cổng VNPay (ATM/Visa/Master)</span>
-                            </div>
-                            <i class="fas fa-check-circle payment-check"></i>
-                        </label>
                     </div>
                     
-                    <!-- Bank Transfer Info -->
-                    <div class="bank-info" id="bankInfo" style="display: none;">
-                        <h4>Thông tin chuyển khoản</h4>
-                        <div class="bank-details">
-                            <p><strong>Ngân hàng:</strong> Vietcombank</p>
-                            <p><strong>Số tài khoản:</strong> 1234567890</p>
-                            <p><strong>Chủ tài khoản:</strong> CONG TY XANHSTORE</p>
-                            <p><strong>Nội dung CK:</strong> <span id="transferContent">DH + Số điện thoại</span></p>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -152,10 +119,6 @@
                     <div class="summary-row">
                         <span>Phí vận chuyển</span>
                         <span id="shipping">0₫</span>
-                    </div>
-                    <div class="summary-row" id="discountRow" style="display: none;">
-                        <span>Giảm giá</span>
-                        <span id="discount" class="text-primary">-0₫</span>
                     </div>
                     
                     <div class="summary-divider"></div>
@@ -363,10 +326,50 @@
     margin-bottom: 12px;
 }
 
+.qr-payment-box {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 16px;
+    align-items: center;
+}
+
+.qr-payment-image {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.qr-payment-image img {
+    width: 100%;
+    max-width: 156px;
+    display: block;
+}
+
+.qr-payment-note {
+    margin-top: 10px;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
 .bank-details p {
     font-size: 14px;
     color: var(--gray-700);
     margin-bottom: 8px;
+}
+
+@media (max-width: 640px) {
+    .qr-payment-box {
+        grid-template-columns: 1fr;
+    }
+
+    .qr-payment-image {
+        justify-content: flex-start;
+    }
 }
 
 /* Order Summary */
@@ -426,6 +429,7 @@
     color: var(--gray-900);
     margin-bottom: 4px;
     display: -webkit-box;
+    line-clamp: 2;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
@@ -515,8 +519,8 @@
 @push('scripts')
 <script>
 let checkoutItems = [];
-let appliedCoupon = null;
 let shippingFee = 0;
+let checkoutTotalAmount = 0;
 
 // Format price helper
 function formatPrice(price) {
@@ -529,18 +533,18 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProvinces();
     setupPaymentMethods();
     loadUserInfo();
+
+    document.getElementById('phone')?.addEventListener('input', updatePaymentQr);
+    document.getElementById('name')?.addEventListener('input', updatePaymentQr);
 });
 
 // Load checkout items from session or cart API
 async function loadCheckoutItems() {
     const items = sessionStorage.getItem('checkoutItems');
-    const coupon = sessionStorage.getItem('appliedCoupon');
+   
     
     if (items) {
         checkoutItems = JSON.parse(items);
-        if (coupon) {
-            appliedCoupon = JSON.parse(coupon);
-        }
         renderOrderItems();
         updateSummary();
         return;
@@ -625,27 +629,29 @@ function renderOrderItems() {
 
 // Update summary
 function updateSummary() {
-    const subtotal = checkoutItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    
-    let discount = 0;
-    if (appliedCoupon) {
-        if (appliedCoupon.type === 'percent') {
-            discount = subtotal * appliedCoupon.value / 100;
-        } else {
-            discount = appliedCoupon.value;
-        }
-        document.getElementById('discountRow').style.display = 'flex';
-        document.getElementById('discount').textContent = '-' + formatPrice(discount) + '₫';
-    }
-    
-    // Calculate shipping based on province (simplified)
+    const subtotal = checkoutItems.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+    );
+
+    // phí ship
     shippingFee = subtotal >= 500000 ? 0 : 30000;
-    
-    const total = subtotal - discount + shippingFee;
-    
-    document.getElementById('subtotal').textContent = formatPrice(subtotal) + '₫';
-    document.getElementById('shipping').textContent = shippingFee === 0 ? 'Miễn phí' : formatPrice(shippingFee) + '₫';
-    document.getElementById('total').textContent = formatPrice(total) + '₫';
+
+    // tổng tiền
+    checkoutTotalAmount = subtotal + shippingFee;
+
+    document.getElementById('subtotal').textContent =
+        formatPrice(subtotal) + '₫';
+
+    document.getElementById('shipping').textContent =
+        shippingFee === 0
+            ? 'Miễn phí'
+            : formatPrice(shippingFee) + '₫';
+
+    document.getElementById('total').textContent =
+        formatPrice(checkoutTotalAmount) + '₫';
+
+    updatePaymentQr();
 }
 
 // API URL cho dữ liệu địa chính Việt Nam
@@ -767,6 +773,7 @@ async function loadUserInfo() {
     if (user.name) document.getElementById('name').value = user.name;
     if (user.email) document.getElementById('email').value = user.email;
     if (user.phone) document.getElementById('phone').value = user.phone;
+    updatePaymentQr();
 }
 
 // Setup payment methods
@@ -777,15 +784,55 @@ function setupPaymentMethods() {
             this.classList.add('active');
             this.querySelector('input').checked = true;
             
-            // Show bank info if bank transfer selected
-            const bankInfo = document.getElementById('bankInfo');
-            if (this.querySelector('input').value === 'bank_transfer') {
-                bankInfo.style.display = 'block';
-            } else {
-                bankInfo.style.display = 'none';
-            }
+            updatePaymentQr();
         });
     });
+
+    document.querySelectorAll('input[name="payment"]').forEach(input => {
+        input.addEventListener('change', updatePaymentQr);
+    });
+}
+
+function updatePaymentQr() {
+    const bankInfo = document.getElementById('bankInfo');
+    const qrImage = document.getElementById('paymentQrImage');
+    const qrAmount = document.getElementById('qrAmount');
+    const qrNote = document.getElementById('qrPaymentNote');
+    const transferContent = document.getElementById('transferContent');
+
+    if (!bankInfo || !qrImage || !qrAmount || !qrNote || !transferContent) {
+        return;
+    }
+
+    const selected = document.querySelector('input[name="payment"]:checked')?.value || 'cod';
+    const onlineMethods = ['bank_transfer', 'banking'];
+
+    if (!onlineMethods.includes(selected)) {
+        bankInfo.style.display = 'none';
+        return;
+    }
+
+    const phone = (document.getElementById('phone')?.value || '').trim();
+    const amount = Math.max(0, Math.round(checkoutTotalAmount || 0));
+    const transferText = phone ? `DH ${phone}` : 'DH + So dien thoai';
+    const qrAmountText = formatPrice(amount) + '₫';
+
+    const bankCode = 'VCB';
+    const accountNo = '1234567890';
+    const accountName = encodeURIComponent('CONG TY XANHSTORE');
+    const addInfo = encodeURIComponent(transferText);
+    const qrUrl = `https://img.vietqr.io/image/${bankCode}-${accountNo}-compact2.png?amount=${amount}&addInfo=${addInfo}&accountName=${accountName}`;
+
+    bankInfo.style.display = 'block';
+    qrImage.src = qrUrl;
+    qrAmount.textContent = qrAmountText;
+    transferContent.textContent = transferText;
+
+    if (selected === 'bank_transfer' || selected === 'banking') {
+        qrNote.textContent = 'Hệ thống hiện dùng mã QR chuyển khoản để thanh toán online. Bạn vẫn có thể quét mã bằng app ngân hàng.';
+    } else {
+        qrNote.textContent = 'Mở ứng dụng ngân hàng và quét mã QR để chuyển khoản nhanh.';
+    }
 }
 
 // Place order
@@ -833,7 +880,6 @@ async function placeOrder() {
         shipping_address: shippingAddress,
         payment_method: document.querySelector('input[name="payment"]:checked').value,
         note: document.getElementById('note').value,
-        coupon_code: appliedCoupon?.code
     };
     
     console.log('Order data:', orderData);
@@ -857,16 +903,27 @@ async function placeOrder() {
         });
         
         const data = await response.json();
+        console.log(data);
         
         if (response.ok) {
-            // Clear cart and checkout data
-            sessionStorage.removeItem('checkoutItems');
-            sessionStorage.removeItem('appliedCoupon');
-            localStorage.setItem('cart', '[]');
-            
-            // Redirect to success page
-            window.location.href = `/orders/${data.data?.id || data.id}/success`;
-        } else {
+
+    // Nếu thanh toán PayOS
+    if (data.payment_type === 'payos') {
+
+        sessionStorage.removeItem('checkoutItems');
+        
+
+        window.location.href = data.checkoutUrl;
+        return;
+    }
+    // COD
+    sessionStorage.removeItem('checkoutItems');
+   
+    localStorage.setItem('cart', '[]');
+
+     window.location.href =
+        `/orders/${data.data?.id || data.id}/success`;
+    } else {
             alert(data.message || 'Đặt hàng không thành công. Vui lòng thử lại.');
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-lock"></i> Đặt hàng';

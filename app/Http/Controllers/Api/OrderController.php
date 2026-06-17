@@ -11,9 +11,21 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-
+use PayOS\PayOS;
 class OrderController extends Controller
 {
+    private function normalizePaymentMethod(?string $method): string
+    {
+        $method = strtolower(trim((string) $method));
+
+        return match ($method) {
+            'cod' => 'cod',
+            'banking', 'bank_transfer', 'bank transfer', 'chuyen khoan' => 'banking',
+            'wallet', 'momo', 'vnpay' => 'wallet',
+            default => $method,
+        };
+    }
+
     public function index(Request $request)
     {
         $orders = Order::with(['items.product.images', 'payment'])
@@ -87,6 +99,11 @@ class OrderController extends Controller
 
             $items = $request->items;
             $shippingAddress = $request->shipping_address;
+            $paymentMethod = $this->normalizePaymentMethod($request->payment_method);
+
+            if (! in_array($paymentMethod, ['cod', 'banking', 'wallet'], true)) {
+                throw new \Exception('Phương thức thanh toán không hợp lệ');
+            }
             
             // Check stock for all items
             foreach ($items as $item) {
@@ -111,6 +128,7 @@ class OrderController extends Controller
                 'receiver_name' => $shippingAddress['name'],
                 'receiver_phone' => $shippingAddress['phone'],
                 'receiver_address' => $shippingAddress['full_address'],
+                'payment_method' => $paymentMethod,
                 'total_amount' => $totalAmount,
                 'status' => 'pending',
                 'note' => $request->note ?? null,
@@ -132,19 +150,20 @@ class OrderController extends Controller
             }
 
             // Create payment
-            $paymentMethod = $request->payment_method;
-            $paymentStatus = $paymentMethod === 'cod' ? 'pending' : 'pending';
-            
+            $paymentStatus = 'pending';
             Payment::create([
-                'order_id' => $order->id,
-                'payment_method' => $paymentMethod,
-                'amount' => $totalAmount,
-                'status' => $paymentStatus,
-                'transaction_code' => 'TXN' . time() . rand(1000, 9999),
+            'order_id' => $order->id,
+            'payment_method' => $paymentMethod,
+            'amount' => $totalAmount,
+            'status' => $paymentStatus,
+            'transaction_code' => 'TXN' . time() . rand(1000, 9999),
             ]);
 
-            // Clear cart if user is logged in
+            // Nếu là COD
+            if ($paymentMethod === 'cod') {
+
             $cart = Cart::where('user_id', $request->user()->id)->first();
+
             if ($cart) {
                 $cart->items()->delete();
             }
@@ -159,6 +178,48 @@ class OrderController extends Controller
                     'order' => $order->load(['items.product', 'payment'])
                 ]
             ]);
+
+            }
+
+            // Thanh toán PayOS
+            $payOS = new PayOS(
+            config('services.payos.client_id'),
+            config('services.payos.api_key'),
+            config('services.payos.checksum_key')
+            );
+
+            $orderCode = intval(date('ymdHis') . rand(10, 99));
+
+            $paymentData = [
+            "orderCode" => $orderCode,
+            "amount" => (int)$totalAmount,
+            "description" => "DH-" . $order->id,
+            "returnUrl" => url('/payment/success'),
+            "cancelUrl" => url('/payment/cancel')
+            ];
+
+            try {
+
+    $response = $payOS->createPaymentLink($paymentData);
+
+} catch (\Exception $e) {
+
+    return response()->json([
+        'success' => false,
+        'message' => $e->getMessage()
+    ], 500);
+}
+
+
+            DB::commit();
+
+            return response()->json([
+            'success' => true,
+            'payment_type' => 'payos',
+            'checkoutUrl' => $response['checkoutUrl'],
+            'order_id' => $order->id
+            ]);
+
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -177,7 +238,7 @@ class OrderController extends Controller
             'receiver_name' => 'required|string|max:255',
             'receiver_phone' => 'required|string|max:20',
             'receiver_address' => 'required|string',
-            'payment_method' => 'required|in:cod,banking,wallet',
+                'payment_method' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -202,6 +263,12 @@ class OrderController extends Controller
         try {
             DB::beginTransaction();
 
+            $paymentMethod = $this->normalizePaymentMethod($request->payment_method);
+
+            if (! in_array($paymentMethod, ['cod', 'banking', 'wallet'], true)) {
+                throw new \Exception('Phương thức thanh toán không hợp lệ');
+            }
+
             // Check stock
             foreach ($cart->items as $item) {
                 if ($item->product->quantity < $item->quantity) {
@@ -221,6 +288,7 @@ class OrderController extends Controller
                 'receiver_name' => $request->receiver_name,
                 'receiver_phone' => $request->receiver_phone,
                 'receiver_address' => $request->receiver_address,
+                'payment_method' => $paymentMethod,
                 'total_amount' => $totalAmount,
                 'status' => 'pending',
             ]);
@@ -243,17 +311,17 @@ class OrderController extends Controller
             // Create payment
             Payment::create([
                 'order_id' => $order->id,
-                'payment_method' => $request->payment_method,
+                'payment_method' => $paymentMethod,
                 'amount' => $totalAmount,
-                'status' => 'completed',
+                'status' => $paymentMethod === 'cod' ? 'pending' : 'pending',
                 'transaction_code' => 'TXN' . time() . rand(1000, 9999),
             ]);
 
             // Clear cart
             $cart->items()->delete();
 
-            // Update order status to paid
-            $order->status = 'paid';
+            // COD is pending on delivery, online payments wait for confirmation
+            $order->status = $paymentMethod === 'cod' ? 'pending' : 'pending';
             $order->save();
 
             DB::commit();

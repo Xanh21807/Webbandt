@@ -29,20 +29,8 @@
                         <span id="subtotal">0₫</span>
                     </div>
                     <div class="summary-row">
-                        <span>Giảm giá</span>
-                        <span id="discount" class="text-primary">-0₫</span>
-                    </div>
-                    <div class="summary-row">
                         <span>Phí vận chuyển</span>
                         <span id="shipping">Miễn phí</span>
-                    </div>
-                    
-                    <div class="coupon-section">
-                        <div class="coupon-input">
-                            <input type="text" id="couponCode" placeholder="Nhập mã giảm giá">
-                            <button class="btn btn-outline" onclick="applyCoupon()">Áp dụng</button>
-                        </div>
-                        <div id="couponMessage" class="coupon-message"></div>
                     </div>
                     
                     <div class="summary-divider"></div>
@@ -356,38 +344,6 @@
     color: var(--primary) !important;
 }
 
-.coupon-section {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #e5e7eb;
-}
-
-.coupon-input {
-    display: flex;
-    gap: 8px;
-}
-
-.coupon-input input {
-    flex: 1;
-    padding: 10px 14px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 14px;
-}
-
-.coupon-message {
-    font-size: 13px;
-    margin-top: 8px;
-}
-
-.coupon-message.success {
-    color: #10b981;
-}
-
-.coupon-message.error {
-    color: #ef4444;
-}
-
 .summary-card .btn {
     margin-top: 12px;
 }
@@ -456,7 +412,7 @@
 @push('scripts')
 <script>
 let cartItems = [];
-let appliedCoupon = null;
+let serverCartTotal = null; // if loaded from server for authenticated users
 
 // Format price helper
 function formatPrice(price) {
@@ -493,12 +449,14 @@ async function loadCart() {
         
         console.log('Cart API response status:', response.status);
         
-        if (response.ok) {
+            if (response.ok) {
             const result = await response.json();
             console.log('Cart API result:', result);
             // data là mảng items đã format
             cartItems = Array.isArray(result.data) ? result.data : [];
-            console.log('Cart items loaded:', cartItems);
+            // capture server-side total (already applies combo discounts)
+            serverCartTotal = typeof result.total !== 'undefined' ? Number(result.total) : null;
+            console.log('Cart items loaded:', cartItems, 'serverTotal:', serverCartTotal);
         } else if (response.status === 401) {
             console.log('Token expired, loading guest cart');
             // Token hết hạn, xóa và load guest cart
@@ -526,11 +484,23 @@ async function loadGuestCartProducts() {
         try {
             const res = await fetch(`/api/products/${item.product_id}`);
             const data = await res.json();
-            if (data.success && data.data.product) {
-                const product = data.data.product;
-                item.name = product.name;
-                item.price = product.price;
-                item.image = product.images?.[0]?.image_url;
+            // Normalize product data from different possible response shapes
+            let product = null;
+            if (data) {
+                if (data.data && data.data.product) product = data.data.product;
+                else if (data.data && typeof data.data === 'object' && data.data.id) product = data.data;
+                else if (data.product) product = data.product;
+            }
+
+            if (product) {
+                item.name = product.name ?? item.name ?? 'Sản phẩm không tồn tại';
+                item.price = Number(product.price) || 0;
+                item.image = product.images?.[0]?.image_url ?? item.image ?? 'https://placehold.co/100x100/f5f5f5/333?text=No+Image';
+            } else {
+                // Ensure defaults so rendering won't show undefined / NaN
+                item.name = item.name ?? 'Sản phẩm không tồn tại';
+                item.price = Number(item.price) || 0;
+                item.image = item.image ?? 'https://placehold.co/100x100/f5f5f5/333?text=No+Image';
             }
         } catch (e) {
             console.error('Error loading product:', e);
@@ -588,10 +558,10 @@ function renderCart() {
                         <div class="cart-item-left">
                             <div class="cart-item-quantity">
                                 <button onclick="updateQuantity(${index}, -1)">−</button>
-                                <input type="number" value="${item.quantity}" min="1" onchange="setQuantity(${index}, this.value)">
+                                <input type="number" value="${Number(item.quantity) || 1}" min="1" onchange="setQuantity(${index}, this.value)">
                                 <button onclick="updateQuantity(${index}, 1)">+</button>
                             </div>
-                            <div class="cart-item-total">${formatPrice(item.price * item.quantity)}₫</div>
+                            <div class="cart-item-total">${formatPrice((Number(item.price) || 0) * (Number(item.quantity) || 0))}₫</div>
                         </div>
                         <div class="cart-item-actions">
                             <button onclick="toggleFavorite(${item.product_id || item.id})" title="Thêm vào yêu thích">
@@ -734,62 +704,14 @@ function updateSummary() {
         }
     });
     
-    let discount = 0;
-    if (appliedCoupon) {
-        if (appliedCoupon.type === 'percent') {
-            discount = subtotal * appliedCoupon.value / 100;
-        } else {
-            discount = appliedCoupon.value;
-        }
-    }
-    
-    const total = Math.max(0, subtotal - discount);
-    
-    document.getElementById('itemCount').textContent = itemCount;
-    document.getElementById('subtotal').textContent = formatPrice(subtotal) + '₫';
-    document.getElementById('discount').textContent = '-' + formatPrice(discount) + '₫';
-    document.getElementById('total').textContent = formatPrice(total) + '₫';
-    
-    // Disable checkout if no items selected
-    document.getElementById('checkoutBtn').disabled = itemCount === 0;
-}
+    const total = subtotal;
 
-// Apply coupon
-async function applyCoupon() {
-    const code = document.getElementById('couponCode').value.trim();
-    const messageEl = document.getElementById('couponMessage');
-    
-    if (!code) {
-        messageEl.textContent = 'Vui lòng nhập mã giảm giá';
-        messageEl.className = 'coupon-message error';
-        return;
-    }
-    
-    try {
-        const response = await fetch('/api/coupons/validate', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ code })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok && data.valid) {
-            appliedCoupon = data.coupon;
-            messageEl.textContent = `Áp dụng thành công: Giảm ${data.coupon.type === 'percent' ? data.coupon.value + '%' : formatPrice(data.coupon.value) + '₫'}`;
-            messageEl.className = 'coupon-message success';
-            updateSummary();
-        } else {
-            messageEl.textContent = data.message || 'Mã giảm giá không hợp lệ';
-            messageEl.className = 'coupon-message error';
-        }
-    } catch (error) {
-        messageEl.textContent = 'Không thể kiểm tra mã giảm giá';
-        messageEl.className = 'coupon-message error';
-    }
+document.getElementById('itemCount').textContent = itemCount;
+document.getElementById('subtotal').textContent = formatPrice(subtotal) + '₫';
+document.getElementById('total').textContent = formatPrice(total) + '₫';
+
+// Disable checkout if no items selected
+document.getElementById('checkoutBtn').disabled = itemCount === 0;
 }
 
 // Proceed to checkout
@@ -810,9 +732,6 @@ function proceedToCheckout() {
     
     // Store selected items for checkout
     sessionStorage.setItem('checkoutItems', JSON.stringify(selectedItems));
-    if (appliedCoupon) {
-        sessionStorage.setItem('appliedCoupon', JSON.stringify(appliedCoupon));
-    }
     
     window.location.href = '/checkout';
 }

@@ -105,7 +105,7 @@
                     </div>
                     <div class="products-sort">
                         <label>Sắp xếp:</label>
-                        <select id="sortSelect" onchange="loadProducts()">
+                        <select id="sortSelect" onchange="loadProducts(1)">
                             <option value="newest">Mới nhất</option>
                             <option value="price_asc">Giá thấp đến cao</option>
                             <option value="price_desc">Giá cao đến thấp</option>
@@ -472,12 +472,17 @@ async function loadProducts(page = 1) {
     // Build query string
     const params = new URLSearchParams();
     params.append('page', page);
-    params.append('sort', document.getElementById('sortSelect').value);
+    params.append('sort_by', document.getElementById('sortSelect').value);
     
     // Add URL params
     const urlParams = new URLSearchParams(window.location.search);
     for (const [key, value] of urlParams) {
         if (!params.has(key)) params.append(key, value);
+    }
+    // If user applied explicit UI filters, drop free-text search params
+    if (Object.keys(currentFilters).length > 0) {
+        params.delete('search');
+        params.delete('keyword');
     }
     
     // Add filters
@@ -533,7 +538,7 @@ async function loadProducts(page = 1) {
 // Create product card HTML
 function createProductCard(product) {
     const hasDiscount = product.sale_price && product.sale_price < product.price;
-    const imageUrl = product.images?.[0]?.image_url || 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=300&h=300&fit=crop';
+    const imageUrl = getProductImage(product);
     
     return `
         <div class="product-card">
@@ -542,7 +547,7 @@ function createProductCard(product) {
                 <span class="badge badge-gift"><i class="fas fa-gift"></i> Quà 2Tr</span>
             </div>
             <a href="/products/${product.id}" class="product-image">
-                <img src="${imageUrl}" alt="${product.name}">
+                    <img src="${appendImageVersion(imageUrl, product.id)}" alt="${product.name}">
             </a>
             <div class="product-info">
                 <span class="product-category">${product.category?.name || 'Điện thoại'}</span>
@@ -558,8 +563,12 @@ function createProductCard(product) {
                     <span class="spec-tag">${product.storage || '256GB'}</span>
                 </div>
                 <div class="product-price">
-                    <span class="price-current">${formatPrice(product.price * 0.85)}đ</span>
-                    <span class="price-old">${formatPrice(product.price)}đ</span>
+                    ${product.sale_price && Number(product.sale_price) < Number(product.price) ? `
+                        <span class="price-old">${formatPrice(product.price)}đ</span>
+                        <span class="price-current">${formatPrice(product.sale_price)}đ</span>
+                    ` : `
+                        <span class="price-current">${formatPrice(product.price)}đ</span>
+                    `}
                 </div>
             </div>
             <div class="product-actions">
@@ -572,6 +581,44 @@ function createProductCard(product) {
             </div>
         </div>
     `;
+}
+
+function getProductImage(product) {
+    const images = product.images || [];
+
+    if (images.length > 0) {
+        const firstImage = images[0];
+        return typeof firstImage === 'object' ? firstImage.image_url : firstImage;
+    }
+
+    const name = (product.name || '').toLowerCase();
+
+    if (name.includes('iphone')) {
+        return 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=300&h=300&fit=crop';
+    }
+
+    if (name.includes('samsung')) {
+        return 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=300&h=300&fit=crop';
+    }
+
+    if (name.includes('xiaomi')) {
+        return 'https://images.unsplash.com/photo-1598327106026-d9521da673d1?w=300&h=300&fit=crop';
+    }
+
+    if (name.includes('oppo')) {
+        return 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=300&h=300&fit=crop';
+    }
+
+    if (name.includes('vivo')) {
+        return 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=300&h=300&fit=crop';
+    }
+
+    return 'https://placehold.co/300x300/f3f4f6/111827?text=XanhStore';
+}
+
+function appendImageVersion(url, version) {
+    if (!url) return url;
+    return url.includes('?') ? `${url}&v=${version}` : `${url}?v=${version}`;
 }
 
 // Render pagination
@@ -653,9 +700,20 @@ async function loadCategoryFilters() {
         const response = await fetch('/api/categories');
         const result = await response.json();
         const categories = result.data?.data || result.data || [];
-        
+
+        // Dedupe categories by name (case-insensitive) to avoid duplicate entries
+        const seen = new Set();
+        const unique = [];
+        for (const cat of categories) {
+            const key = (cat.name || '').trim().toLowerCase();
+            if (!seen.has(key)) {
+                seen.add(key);
+                unique.push(cat);
+            }
+        }
+
         const container = document.getElementById('categoryFilters');
-        container.innerHTML = categories.map(cat => `
+        container.innerHTML = unique.map(cat => `
             <label class="checkbox-wrapper">
                 <input type="checkbox" name="category_id" value="${cat.id}">
                 <span class="checkmark"></span>

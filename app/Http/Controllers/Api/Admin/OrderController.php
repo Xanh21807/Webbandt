@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Payment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
@@ -118,11 +120,51 @@ class OrderController extends Controller
         $order->status = $request->status;
         $order->save();
 
+        if ($request->status === 'paid' && $order->payment) {
+            $order->payment->status = 'completed';
+            $order->payment->paid_at = Carbon::now();
+            $order->payment->save();
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Cập nhật trạng thái đơn hàng thành công',
             'data' => [
                 'order' => $order
+            ]
+        ]);
+    }
+
+    public function confirmPayment(Request $request, $id)
+    {
+        $order = Order::with('payment')->find($id);
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Đơn hàng không tồn tại'
+            ], 404);
+        }
+
+        if (!$order->payment) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Đơn hàng này chưa có thông tin thanh toán'
+            ], 404);
+        }
+
+        $order->status = 'paid';
+        $order->save();
+
+        $order->payment->status = 'completed';
+        $order->payment->paid_at = Carbon::now();
+        $order->payment->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Đã xác nhận đơn hàng đã thanh toán',
+            'data' => [
+                'order' => $order->load(['user', 'items.product', 'payment'])
             ]
         ]);
     }

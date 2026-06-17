@@ -18,6 +18,7 @@ return new class extends Migration
             $table->text('address')->nullable();
             $table->enum('role', ['user', 'admin'])->default('user');
             $table->enum('status', ['active', 'blocked'])->default('active');
+            $table->string('google_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
