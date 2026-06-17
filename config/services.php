@@ -44,8 +44,8 @@ return [
         'history_limit' => env('CHATBOT_HISTORY_LIMIT', 8),
     ],
     'google' => [
-        'client_id' =>'929697698452-vtj2ek3bmlqauamvnbna6ffsps4n4hgl.apps.googleusercontent.com',
-        'client_secret' => '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',
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('APP_URL') . '/auth/google/callback',
     ],
     'payos' => [
