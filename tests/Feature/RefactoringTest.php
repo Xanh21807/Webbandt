@@ -99,4 +99,13 @@ class RefactoringTest extends TestCase
                 ]
             ]);
     }
+
+    public function test_search_parser_logic()
+    {
+        $parsed = \App\Services\SearchParser::parse('điện thoại pin trâu giá rẻ');
+        
+        $this->assertEquals('high', $parsed['filters']['battery'] ?? null);
+        $this->assertEquals('under_5', $parsed['filters']['price_range'] ?? null);
+        $this->assertNull($parsed['keyword']);
+    }
 }
