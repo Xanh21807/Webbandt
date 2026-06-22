@@ -107,5 +107,10 @@ class RefactoringTest extends TestCase
         $this->assertEquals('high', $parsed['filters']['battery'] ?? null);
         $this->assertEquals('under_5', $parsed['filters']['price_range'] ?? null);
         $this->assertNull($parsed['keyword']);
+
+        $parsedNonAccented = \App\Services\SearchParser::parse('dien thoai pin trau gia re');
+        $this->assertEquals('high', $parsedNonAccented['filters']['battery'] ?? null);
+        $this->assertEquals('under_5', $parsedNonAccented['filters']['price_range'] ?? null);
+        $this->assertNull($parsedNonAccented['keyword']);
     }
 }

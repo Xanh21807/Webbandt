@@ -15,8 +15,8 @@ class SearchParser
         $keyword = null;
         $remainingText = $t;
 
-        // Extract price ranges like 'dưới 5 triệu', '5-10 triệu', 'trên 20 triệu'
-        if (preg_match('/dưới\s*(\d+)\s*triệu/', $remainingText, $m)) {
+        // Extract price ranges like 'dưới 5 triệu', '5-10 triệu', 'trên 20 triệu' (accent-tolerant)
+        if (preg_match('/(?:dưới|duoi)\s*(\d+)\s*(?:triệu|trieu)/u', $remainingText, $m)) {
             $val = (int) $m[1];
             if ($val <= 5) {
                 $filters['price_range'] = 'under_5';
@@ -28,30 +28,30 @@ class SearchParser
                 $filters['price_range'] = '20_30';
             }
             $remainingText = str_replace($m[0], '', $remainingText);
-        } elseif (preg_match('/giá rẻ|giá thấp/', $remainingText, $m)) {
+        } elseif (preg_match('/giá rẻ|giá thấp|gia re|gia thap/u', $remainingText, $m)) {
             $filters['price_range'] = 'under_5';
             $remainingText = str_replace($m[0], '', $remainingText);
-        } elseif (preg_match('/(\d+)\s*-\s*(\d+)\s*triệu/', $remainingText, $m)) {
+        } elseif (preg_match('/(\d+)\s*-\s*(\d+)\s*(?:triệu|trieu)/u', $remainingText, $m)) {
             $min = (int)$m[1];
             $max = (int)$m[2];
             if ($min >= 5 && $max <= 10) $filters['price_range'] = '5_10';
             elseif ($min >= 10 && $max <= 20) $filters['price_range'] = '10_20';
             $remainingText = str_replace($m[0], '', $remainingText);
-        } elseif (preg_match('/trên\s*(\d+)\s*triệu/', $remainingText, $m)) {
+        } elseif (preg_match('/(?:trên|tren)\s*(\d+)\s*(?:triệu|trieu)/u', $remainingText, $m)) {
             $val = (int)$m[1];
             if ($val >= 30) $filters['price_range'] = 'over_30';
             elseif ($val >= 20) $filters['price_range'] = '20_30';
             $remainingText = str_replace($m[0], '', $remainingText);
         }
 
-        // Battery intents
-        if (preg_match('/pin\s*(trâu|lớn|mạnh|khủng)|dung lượng pin/', $remainingText, $m)) {
+        // Battery intents (accent-tolerant)
+        if (preg_match('/pin\s*(trâu|lớn|mạnh|khủng|trau|lon|manh|khung)|dung lượng pin|dung luong pin/u', $remainingText, $m)) {
             $filters['battery'] = 'high';
             $remainingText = str_replace($m[0], '', $remainingText);
         }
 
         // RAM like '8GB', '12gb'
-        if (preg_match('/(\d+)\s*gb/', $remainingText, $m)) {
+        if (preg_match('/(\d+)\s*gb/u', $remainingText, $m)) {
             $filters['ram'] = $m[1];
             $remainingText = str_replace($m[0], '', $remainingText);
         }
@@ -70,7 +70,10 @@ class SearchParser
 
         // If none of these, fallback keyword is the remaining text
         // but strip stopwords like 'giá', 'rẻ', 'mua'
-        $stopwords = ['giá','rẻ','mua','bán','có','và','với','nhanh','nhất','nhỏ','lớn', 'điện thoại', 'điệnthoại', 'đt', 'ram', 'máy', 'điện', 'thoại', 'khủng', 'tốt'];
+        $stopwords = [
+            'giá','rẻ','mua','bán','có','và','với','nhanh','nhất','nhỏ','lớn', 'điện thoại', 'điệnthoại', 'đt', 'ram', 'máy', 'điện', 'thoại', 'khủng', 'tốt',
+            'gia','re','ban','co','va','voi','nhat','nho','lon','dien thoai','dienthoai','dt','may','dien','thoai','khung','tot'
+        ];
         $candidate = trim(preg_replace('/\s+/', ' ', $remainingText));
         foreach ($stopwords as $s) {
             $candidate = preg_replace('/\b' . preg_quote($s, '/') . '\b/u', '', $candidate) ?? str_replace($s, '', $candidate);
