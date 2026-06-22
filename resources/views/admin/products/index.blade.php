@@ -680,7 +680,9 @@ async function loadProducts(page = 1) {
             } else {
                 const rows = [];
                 products.forEach(product => {
-                    const imageUrl = product.images && product.images[0] ? product.images[0].image_url : 'https://placehold.co/50x50/f5f5f5/333?text=No';
+                    const rawImg = product.images && product.images[0] ? product.images[0].image_url : null;
+                    // image_url đã là URL đầy đủ (http://...), dùng trực tiếp
+                    const imageUrl = rawImg || 'https://placehold.co/50x50/f5f5f5/999?text=?';
                     const stock = product.quantity || product.stock || 0;
                     const categoryName = product.category ? product.category.name : '-';
                     const priceDisplay = product.sale_price 
@@ -690,7 +692,7 @@ async function loadProducts(page = 1) {
                     const row = '<tr>' +
                         '<td><input type="checkbox" class="product-checkbox" value="' + product.id + '"></td>' +
                         '<td><div class="product-cell">' +
-                            '<img src="' + imageUrl + '" alt="' + product.name + '">' +
+                            '<img src="' + imageUrl + '" alt="' + product.name + '" onerror="this.src=\'https://placehold.co/50x50/f5f5f5/999?text=?\'">' +
                             '<span class="product-name">' + product.name + '</span>' +
                         '</div></td>' +
                         '<td class="price-cell">' + priceDisplay + '</td>' +
@@ -841,40 +843,61 @@ async function saveProduct() {
         return;
     }
     
-    if (!quantity || parseInt(quantity) < 0) {
-        alert('Vui lòng nhập số lượng hợp lệ');
+    if (quantity === '' || quantity === null || quantity === undefined || parseInt(quantity) < 0) {
+        alert('Vui lòng nhập số lượng hợp lệ (>= 0)');
         document.getElementById('productQuantity').focus();
         return;
     }
     
-    const formData = {
-        name: name,
-        brand: brand,
-        price: parseFloat(price),
-        category_id: parseInt(categoryId),
-        ram: document.getElementById('productRam').value || null,
-        storage: document.getElementById('productStorage').value || null,
-        battery: document.getElementById('productBattery').value || null,
-        quantity: parseInt(quantity),
-        status: document.getElementById('productStatus').value,
-        description: document.getElementById('productDescription').value || null
-    };
+    // Dùng FormData để có thể upload file ảnh
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('brand', brand);
+    formData.append('price', parseFloat(price));
+    formData.append('category_id', parseInt(categoryId));
+    formData.append('quantity', parseInt(quantity));
+    formData.append('status', document.getElementById('productStatus').value);
     
-    console.log('Saving product:', formData);
+    const ram = document.getElementById('productRam').value;
+    const storage = document.getElementById('productStorage').value;
+    const battery = document.getElementById('productBattery').value;
+    const description = document.getElementById('productDescription').value;
+    if (ram) formData.append('ram', ram);
+    if (storage) formData.append('storage', storage);
+    if (battery) formData.append('battery', battery);
+    if (description) formData.append('description', description);
+    
+    // Thêm ảnh vào FormData
+    const imageInput = document.getElementById('productImages');
+    if (imageInput && imageInput.files.length > 0) {
+        Array.from(imageInput.files).forEach(file => {
+            formData.append('images[]', file);
+        });
+    }
+    
+    console.log('Saving product with FormData, quantity:', parseInt(quantity));
     
     try {
-        const url = id ? `/api/admin/products/${id}` : '/api/admin/products';
-        const method = id ? 'PUT' : 'POST';
+        let url, method;
+        if (id) {
+            // Laravel không hỗ trợ PUT với FormData, dùng POST + _method
+            url = `/api/admin/products/${id}`;
+            method = 'POST';
+            formData.append('_method', 'PUT');
+        } else {
+            url = '/api/admin/products';
+            method = 'POST';
+        }
         
         const response = await fetch(url, {
             method,
             headers: {
-                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
+                // KHÔNG set Content-Type, để browser tự set multipart/form-data với boundary
             },
-            body: JSON.stringify(formData)
+            body: formData
         });
         
         const data = await response.json();
@@ -903,28 +926,30 @@ async function saveProduct() {
 }
 
 async function deleteProduct(id) {
-    if (!confirm('Bạn có chắc muốn xóa sản phẩm này?')) return;
-    
-    const token = localStorage.getItem('auth_token');
-    
-    try {
-        const response = await fetch(`/api/admin/products/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json'
+    showAdminConfirm(
+        'Sản phẩm này sẽ bị xóa vĩnh viễn và không thể khôi phục.',
+        async () => {
+            const token = localStorage.getItem('auth_token');
+            try {
+                const response = await fetch(`/api/admin/products/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    alert('Đã xóa sản phẩm thành công');
+                    loadProducts(currentPage);
+                } else {
+                    alert('Không thể xóa sản phẩm');
+                }
+            } catch (error) {
+                console.error('Error deleting product:', error);
             }
-        });
-        
-        if (response.ok) {
-            alert('Đã xóa sản phẩm');
-            loadProducts(currentPage);
-        } else {
-            alert('Không thể xóa sản phẩm');
-        }
-    } catch (error) {
-        console.error('Error deleting product:', error);
-    }
+        },
+        { title: 'Xóa sản phẩm?', confirmText: 'Xóa', type: 'danger' }
+    );
 }
 
 async function toggleStatus(id) {

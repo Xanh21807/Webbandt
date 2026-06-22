@@ -535,19 +535,19 @@ class DatabaseSeeder extends Seeder
     {
         $imageMap = [
             'iPhone 15 Pro Max' => [
-                'storage/product-images/product-image-025.jpg',
-                'storage/product-images/product-image-002.jpg',
-                'storage/product-images/product-image-047.jpg',
+                'storage/product-images/iphone-15-pro-max.jpg',
+                'storage/product-images/iphone-15-pro-max_2.jpg',
+                'storage/product-images/iphone-15-pro-max_3.jpg',
             ],
             'Samsung Galaxy S24 Ultra' => [
-                'storage/product-images/product-image-041.jpg',
-                'storage/product-images/product-image-019.jpg',
-                'storage/product-images/product-image-044.jpg',
+                'storage/product-images/samsungs24ult.jpg',
+                'storage/product-images/samsungs24ult_2.jpg',
+                'storage/product-images/samsungs24ult_3.jpg',
             ],
             'Xiaomi 14 Pro' => [
-                'storage/product-images/product-image-029.jpg',
-                'storage/product-images/product-image-015.jpg',
-                'storage/product-images/product-image-004.jpg',
+                'storage/product-images/xiaomi-14_1.jpg',
+                'storage/product-images/xiaomi-14_2.jpg',
+                'storage/product-images/xiaomi-14_3.jpg',
             ],
         ];
 

@@ -576,7 +576,7 @@ async function loadTopProducts() {
                     <tr>
                         <td>
                             <div class="product-cell">
-                                <img src="${product.image || 'https://placehold.co/40x40/f5f5f5/333?text=No'}" alt="${product.name}">
+                                <img src="${product.image_url || 'https://placehold.co/40x40/f5f5f5/999?text=?'}" alt="${product.name}" onerror="this.src='https://placehold.co/40x40/f5f5f5/999?text=?'">
                                 <span>${product.name}</span>
                             </div>
                         </td>

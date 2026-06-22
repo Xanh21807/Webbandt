@@ -352,17 +352,60 @@ p, .paragraph {
     width: 100%;
     padding: var(--spacing-3) var(--spacing-4);
     padding-left: var(--spacing-10);
+    padding-right: var(--spacing-12);
     border: none;
     border-radius: var(--radius-lg);
     font-size: var(--font-size-sm);
 }
 
-.header-search-input i {
+.header-search-input i.fa-search {
     position: absolute;
     left: var(--spacing-4);
     top: 50%;
     transform: translateY(-50%);
     color: var(--gray-400);
+}
+
+.advanced-search-btn {
+    position: absolute;
+    right: var(--spacing-2);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-400);
+    transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+}
+
+.advanced-search-btn:hover {
+    color: var(--primary);
+    background-color: var(--gray-100);
+}
+
+.search-dropdown-footer {
+    padding: var(--spacing-3) var(--spacing-4);
+    border-top: 1px solid var(--gray-200);
+    text-align: center;
+    background-color: var(--gray-50);
+}
+
+.search-dropdown-footer a {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--primary);
+    transition: color var(--transition-fast);
+}
+
+.search-dropdown-footer a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
 }
 
 .header-actions {
@@ -2610,3 +2653,145 @@ p, .paragraph {
 .cursor-pointer { cursor: pointer; }
 
 .transition { transition: all var(--transition-base); }
+
+/* Category Menu redesign matching CellphoneS style */
+.category-dropdown {
+    position: relative;
+}
+
+.category-menu {
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: auto !important;
+    width: 240px !important;
+    min-width: 240px !important;
+    background: var(--white) !important;
+    border: 1px solid var(--gray-200) !important;
+    border-radius: var(--radius-xl) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12) !important;
+    padding: var(--spacing-2) 0 !important;
+    z-index: 999 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transform: translateY(10px) !important;
+    transition: all var(--transition-base) !important;
+}
+
+.category-dropdown:hover .category-menu {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateY(0) !important;
+}
+
+.category-item-wrapper {
+    position: static !important;
+}
+
+.category-menu-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px var(--spacing-4) !important;
+    font-size: var(--font-size-sm) !important;
+    font-weight: 600 !important;
+    color: var(--gray-700) !important;
+    transition: all var(--transition-fast) !important;
+    text-decoration: none !important;
+}
+
+.category-menu-item .item-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: var(--spacing-3) !important;
+}
+
+.category-menu-item .item-left i {
+    font-size: 16px !important;
+    width: 20px !important;
+    text-align: center !important;
+    transition: color var(--transition-fast) !important;
+}
+
+.category-menu-item .chevron-right {
+    font-size: 10px !important;
+    color: var(--gray-400) !important;
+    transition: transform var(--transition-fast) !important, color var(--transition-fast) !important;
+}
+
+.category-menu-item:hover {
+    background-color: var(--primary-light) !important;
+    color: var(--primary) !important;
+}
+
+.category-menu-item:hover .chevron-right {
+    color: var(--primary) !important;
+    transform: translateX(2px) !important;
+}
+
+/* Category menu item brand-specific colors */
+.category-menu-item[href*="category=iphone"] i { color: #555555 !important; }
+.category-menu-item[href*="category=samsung"] i { color: #1428a6 !important; }
+.category-menu-item[href*="category=xiaomi"] i { color: #ff6700 !important; }
+.category-menu-item[href*="category=oppo"] i { color: #008a47 !important; }
+.category-menu-item[href*="category=vivo"] i { color: #415fff !important; }
+.category-menu-item[href*="category=phu-kien"] i { color: #9333ea !important; }
+
+/* Submenu panel (Flyout) */
+.category-submenu {
+    position: absolute !important;
+    top: 0 !important;
+    left: 100% !important;
+    width: 480px !important;
+    min-height: 100% !important;
+    background: var(--white) !important;
+    border: 1px solid var(--gray-200) !important;
+    border-radius: 0 var(--radius-xl) var(--radius-xl) var(--radius-xl) !important;
+    box-shadow: 12px 10px 30px rgba(0,0,0,0.12) !important;
+    padding: var(--spacing-4) !important;
+    z-index: 1000 !important;
+    display: none !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--spacing-6) !important;
+    opacity: 0 !important;
+    transform: translateX(10px) !important;
+    transition: all var(--transition-base) !important;
+}
+
+/* Hover wrapper triggers showing the submenu */
+.category-item-wrapper:hover .category-submenu {
+    display: grid !important;
+    opacity: 1 !important;
+    transform: translateX(0) !important;
+}
+
+/* Submenu columns styling */
+.submenu-column {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--spacing-2) !important;
+}
+
+.submenu-column h4 {
+    font-size: var(--font-size-sm) !important;
+    font-weight: 700 !important;
+    color: var(--gray-900) !important;
+    margin: 0 0 var(--spacing-1) 0 !important;
+    border-bottom: 1px solid var(--gray-200) !important;
+    padding-bottom: var(--spacing-1) !important;
+}
+
+.submenu-column a {
+    font-size: 13px !important;
+    color: var(--gray-600) !important;
+    padding: 2px 0 !important;
+    transition: color var(--transition-fast) !important;
+    text-decoration: none !important;
+    display: block !important;
+}
+
+.submenu-column a:hover {
+    color: var(--primary) !important;
+}

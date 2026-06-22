@@ -621,9 +621,23 @@ function setQuantity(index, value) {
 }
 
 // Remove item
-async function removeItem(index) {
-    if (!confirm('Bạn có chắc muốn xóa sản phẩm này?')) return;
-    
+function removeItem(index) {
+    if (typeof window.showConfirm === 'function') {
+        window.showConfirm(
+            'Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?',
+            async () => {
+                await executeRemoveItem(index);
+            },
+            { title: 'Xóa sản phẩm?', confirmText: 'Xóa', type: 'danger' }
+        );
+    } else {
+        if (confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
+            executeRemoveItem(index);
+        }
+    }
+}
+
+async function executeRemoveItem(index) {
     const token = localStorage.getItem('auth_token');
     if (token && cartItems[index].id) {
         try {
@@ -647,12 +661,30 @@ async function removeItem(index) {
     
     renderCart();
     updateCartBadge();
+    
+    if (typeof window.showToast === 'function') {
+        window.showToast('Đã xóa sản phẩm khỏi giỏ hàng!', 'success');
+    }
 }
 
 // Clear cart
-async function clearCart() {
-    if (!confirm('Bạn có chắc muốn xóa tất cả sản phẩm?')) return;
-    
+function clearCart() {
+    if (typeof window.showConfirm === 'function') {
+        window.showConfirm(
+            'Bạn có chắc muốn xóa tất cả sản phẩm khỏi giỏ hàng?',
+            async () => {
+                await executeClearCart();
+            },
+            { title: 'Xóa tất cả?', confirmText: 'Xóa', type: 'danger' }
+        );
+    } else {
+        if (confirm('Bạn có chắc muốn xóa tất cả sản phẩm?')) {
+            executeClearCart();
+        }
+    }
+}
+
+async function executeClearCart() {
     const token = localStorage.getItem('auth_token');
     if (token) {
         try {
@@ -672,6 +704,10 @@ async function clearCart() {
     localStorage.setItem('guest_cart', '[]');
     renderCart();
     updateCartBadge();
+    
+    if (typeof window.showToast === 'function') {
+        window.showToast('Đã xóa toàn bộ giỏ hàng!', 'success');
+    }
 }
 
 // Toggle select all

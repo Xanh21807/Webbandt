@@ -559,8 +559,7 @@ function createProductCard(product) {
                     <span class="rating-count">(${product.reviews_count || Math.floor(Math.random() * 1000) + 200})</span>
                 </div>
                 <div class="product-specs">
-                    <span class="spec-tag">${product.ram || '8GB'}</span>
-                    <span class="spec-tag">${product.storage || '256GB'}</span>
+                    ${getProductSpecTags(product)}
                 </div>
                 <div class="product-price">
                     ${product.sale_price && Number(product.sale_price) < Number(product.price) ? `
@@ -581,6 +580,56 @@ function createProductCard(product) {
             </div>
         </div>
     `;
+}
+
+// Return spec tag HTML based on product category
+function getProductSpecTags(product) {
+    const catId = product.category_id;
+    const catName = (product.category?.name || '').toLowerCase();
+    const name = (product.name || '').toLowerCase();
+    const phoneKeywords = ['iphone', 'samsung', 'xiaomi', 'oppo', 'vivo'];
+    const isPhone = catId <= 5 || phoneKeywords.some(k => catName.includes(k));
+
+    if (isPhone) {
+        const tags = [];
+        if (product.ram) tags.push(`<span class="spec-tag"><i class="fas fa-memory" style="font-size:10px"></i> ${product.ram}</span>`);
+        if (product.storage) tags.push(`<span class="spec-tag"><i class="fas fa-hdd" style="font-size:10px"></i> ${product.storage}</span>`);
+        if (product.battery) tags.push(`<span class="spec-tag"><i class="fas fa-battery-three-quarters" style="font-size:10px"></i> ${product.battery}</span>`);
+        return tags.length ? tags.join('') : '<span class="spec-tag">Điện thoại</span>';
+    }
+
+    if (catName.includes('tai nghe')) {
+        const type = name.includes('max') ? 'Over-ear' : 'TWS';
+        const anc = name.includes('airpods') || name.includes('bose') || name.includes('soundpeats') ? '<span class="spec-tag">ANC</span>' : '';
+        return `<span class="spec-tag">${type}</span><span class="spec-tag">Bluetooth 5.3</span>${anc}`;
+    }
+
+    if (catName.includes('ốp lưng') || catName.includes('op lung')) {
+        const isMagSafe = name.includes('magsafe') || (product.brand || '').toLowerCase() === 'apple';
+        return `<span class="spec-tag">Chính hãng</span>${isMagSafe ? '<span class="spec-tag">MagSafe</span>' : '<span class="spec-tag">Chống sốc</span>'}`;
+    }
+
+    if (catName.includes('cáp') || catName.includes('cap') || catName.includes('sạc')) {
+        const power = name.includes('250w') ? '250W' : name.includes('100w') ? '100W' : name.includes('65w') ? '65W' : name.includes('15w') ? '15W' : 'Sạc nhanh';
+        return `<span class="spec-tag">${power}</span><span class="spec-tag">GaN</span>`;
+    }
+
+    if (catName.includes('pin') || catName.includes('sạc dự phòng')) {
+        const capacity = product.battery || '';
+        return `${capacity ? `<span class="spec-tag">${capacity}</span>` : ''}<span class="spec-tag">Sạc nhanh</span>`;
+    }
+
+    if (catName.includes('miếng dán') || catName.includes('kính')) {
+        const isPrivacy = name.includes('privacy') || name.includes('chống nhìn');
+        return `<span class="spec-tag">9H</span>${isPrivacy ? '<span class="spec-tag">Chống nhìn trộm</span>' : '<span class="spec-tag">Chống trầy</span>'}`;
+    }
+
+    if (catName.includes('giá đỡ')) {
+        return `<span class="spec-tag">Đa năng</span><span class="spec-tag">Chính hãng</span>`;
+    }
+
+    // Fallback
+    return `<span class="spec-tag">${product.category?.name || 'Phụ kiện'}</span>`;
 }
 
 function getProductImage(product) {

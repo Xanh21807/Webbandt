@@ -46,7 +46,7 @@ Route::get('/categories', [AdminCategoryController::class, 'index']);
 Route::post('/chat', [ChatbotController::class, 'reply']);
 
 // Protected user routes
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'check.status'])->group(function () {
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [AuthController::class, 'profile']);
@@ -80,7 +80,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 // Protected admin routes
-Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth:sanctum', 'check.status', 'admin'])->prefix('admin')->group(function () {
     // Auth
     Route::post('/logout', [AdminAuthController::class, 'logout']);
 
@@ -96,6 +96,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/products/{id}', [AdminProductController::class, 'show']);
     Route::post('/products', [AdminProductController::class, 'store']);
     Route::put('/products/{id}', [AdminProductController::class, 'update']);
+    Route::post('/products/{id}', [AdminProductController::class, 'update']); // Hỗ trợ _method=PUT từ FormData
     Route::delete('/products/{id}', [AdminProductController::class, 'destroy']);
 
     // Orders

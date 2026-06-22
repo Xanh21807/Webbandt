@@ -593,30 +593,32 @@ async function saveCategory() {
 async function deleteCategory(id) {
     const cat = categories.find(c => c.id === id);
     if (!cat) return;
-    
-    if (!confirm(`Bạn có chắc muốn xóa danh mục "${cat.name}"?`)) return;
-    
-    const token = localStorage.getItem('auth_token');
-    
-    try {
-        const response = await fetch(`/api/admin/categories/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json'
+
+    showAdminConfirm(
+        `Danh mục "<strong>${cat.name}</strong>" sẽ bị xóa vĩnh viễn.`,
+        async () => {
+            const token = localStorage.getItem('auth_token');
+            try {
+                const response = await fetch(`/api/admin/categories/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    alert('Đã xóa danh mục thành công');
+                    loadCategories();
+                } else {
+                    const data = await response.json();
+                    alert(data.message || 'Không thể xóa danh mục');
+                }
+            } catch (error) {
+                console.error('Error deleting category:', error);
             }
-        });
-        
-        if (response.ok) {
-            alert('Đã xóa danh mục');
-            loadCategories();
-        } else {
-            const data = await response.json();
-            alert(data.message || 'Không thể xóa danh mục');
-        }
-    } catch (error) {
-        console.error('Error deleting category:', error);
-    }
+        },
+        { title: 'Xóa danh mục?', confirmText: 'Xóa', type: 'danger' }
+    );
 }
 </script>
 @endpush

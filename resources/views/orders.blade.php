@@ -450,6 +450,25 @@ function formatPrice(price) {
     return new Intl.NumberFormat('vi-VN').format(price);
 }
 
+// Lấy URL ảnh sản phẩm từ item đơn hàng
+// API có thể trả về images là mảng object {image_url}, mảng string, hoặc field image
+function getOrderProductImage(item) {
+    const product = item?.product;
+    if (!product) return 'https://placehold.co/70x70/f5f5f5/333?text=No+Image';
+
+    // Thử images[0].image_url (mảng object)
+    if (Array.isArray(product.images) && product.images.length > 0) {
+        const first = product.images[0];
+        if (typeof first === 'object' && first.image_url) return first.image_url;
+        if (typeof first === 'string') return first;
+    }
+
+    // Thử field image trực tiếp
+    if (product.image) return product.image;
+
+    return 'https://placehold.co/70x70/f5f5f5/333?text=No+Image';
+}
+
 // Check auth
 document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('auth_token');
@@ -530,7 +549,7 @@ function renderOrders() {
                             ${(order.items || []).slice(0, 2).map(item => `
                                 <div class="order-product">
                                     <div class="order-product-image">
-                                        <img src="${item.product?.image || 'https://placehold.co/70x70/f5f5f5/333?text=No+Image'}" alt="${item.product?.name}">
+                                        <img src="${getOrderProductImage(item)}" alt="${item.product?.name}" onerror="this.src='https://placehold.co/70x70/f5f5f5/333?text=No+Image'">
                                     </div>
                                     <div class="order-product-info">
                                         <div class="order-product-name">${item.product?.name || 'Sản phẩm'}</div>
@@ -678,7 +697,7 @@ async function viewOrderDetail(orderId) {
                             ${(order.items || []).map(item => `
                                 <div class="order-product">
                                     <div class="order-product-image">
-                                        <img src="${item.product?.images?.[0]?.image_url || item.product?.image || 'https://placehold.co/70x70/f5f5f5/333?text=No+Image'}" alt="${item.product?.name}">
+                                        <img src="${getOrderProductImage(item)}" alt="${item.product?.name}" onerror="this.src='https://placehold.co/70x70/f5f5f5/333?text=No+Image'">
                                     </div>
                                     <div class="order-product-info">
                                         <div class="order-product-name">${item.product?.name || 'Sản phẩm'}</div>
@@ -743,9 +762,23 @@ function closeModal() {
 }
 
 // Cancel order
-async function cancelOrder(orderId) {
-    if (!confirm('Bạn có chắc muốn hủy đơn hàng này?')) return;
-    
+function cancelOrder(orderId) {
+    if (typeof window.showConfirm === 'function') {
+        window.showConfirm(
+            'Bạn có chắc muốn hủy đơn hàng này?',
+            async () => {
+                await executeCancelOrder(orderId);
+            },
+            { title: 'Hủy đơn hàng?', confirmText: 'Hủy đơn', type: 'danger' }
+        );
+    } else {
+        if (confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
+            executeCancelOrder(orderId);
+        }
+    }
+}
+
+async function executeCancelOrder(orderId) {
     const token = localStorage.getItem('auth_token');
     console.log('Cancelling order:', orderId);
     
@@ -764,14 +797,26 @@ async function cancelOrder(orderId) {
         console.log('Cancel response data:', data);
         
         if (response.ok && data.success) {
-            alert('Đã hủy đơn hàng thành công');
+            if (typeof window.showToast === 'function') {
+                window.showToast('Đã hủy đơn hàng thành công', 'success');
+            } else {
+                alert('Đã hủy đơn hàng thành công');
+            }
             loadOrders();
         } else {
-            alert(data.message || 'Không thể hủy đơn hàng');
+            if (typeof window.showToast === 'function') {
+                window.showToast(data.message || 'Không thể hủy đơn hàng', 'error');
+            } else {
+                alert(data.message || 'Không thể hủy đơn hàng');
+            }
         }
     } catch (error) {
         console.error('Error cancelling order:', error);
-        alert('Đã có lỗi xảy ra');
+        if (typeof window.showToast === 'function') {
+            window.showToast('Đã có lỗi xảy ra', 'error');
+        } else {
+            alert('Đã có lỗi xảy ra');
+        }
     }
 }
 

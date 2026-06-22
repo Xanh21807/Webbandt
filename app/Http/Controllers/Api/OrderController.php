@@ -3,75 +3,57 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Payment;
-use App\Models\Cart;
-use App\Models\Product;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use PayOS\PayOS;
+
 class OrderController extends Controller
 {
-    private function normalizePaymentMethod(?string $method): string
-    {
-        $method = strtolower(trim((string) $method));
+    protected $orderService;
 
-        return match ($method) {
-            'cod' => 'cod',
-            'banking', 'bank_transfer', 'bank transfer', 'chuyen khoan' => 'banking',
-            'wallet', 'momo', 'vnpay' => 'wallet',
-            default => $method,
-        };
+    public function __construct(OrderService $orderService)
+    {
+        $this->orderService = $orderService;
     }
 
     public function index(Request $request)
     {
-        $orders = Order::with(['items.product.images', 'payment'])
-            ->where('user_id', $request->user()->id)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        if ($orders->isEmpty()) {
+        try {
+            $orders = $this->orderService->getOrders($request->user()->id);
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'orders' => $orders
+                ]
+            ]);
+        } catch (\Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
             return response()->json([
                 'success' => false,
-                'message' => 'Không tải được đơn hàng của bạn. Hãy thử lại!'
-            ], 404);
+                'message' => $e->getMessage()
+            ], $code);
         }
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'orders' => $orders
-            ]
-        ]);
     }
 
     public function show(Request $request, $id)
     {
-        $order = Order::with(['items.product.images', 'payment'])
-            ->where('user_id', $request->user()->id)
-            ->find($id);
-
-        if (!$order) {
+        try {
+            $order = $this->orderService->getOrderDetails($request->user()->id, (int)$id);
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'order' => $order
+                ]
+            ]);
+        } catch (\Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
             return response()->json([
                 'success' => false,
-                'message' => 'Đơn hàng không tồn tại'
-            ], 404);
+                'message' => $e->getMessage()
+            ], $code);
         }
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'order' => $order
-            ]
-        ]);
     }
 
-    /**
-     * Tạo đơn hàng mới từ checkout page
-     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -95,140 +77,33 @@ class OrderController extends Controller
         }
 
         try {
-            DB::beginTransaction();
+            $result = $this->orderService->createOrder($request->all(), $request->user());
 
-            $items = $request->items;
-            $shippingAddress = $request->shipping_address;
-            $paymentMethod = $this->normalizePaymentMethod($request->payment_method);
-
-            if (! in_array($paymentMethod, ['cod', 'banking', 'wallet'], true)) {
-                throw new \Exception('Phương thức thanh toán không hợp lệ');
-            }
-            
-            // Check stock for all items
-            foreach ($items as $item) {
-                $product = Product::find($item['product_id']);
-                if (!$product) {
-                    throw new \Exception("Sản phẩm không tồn tại");
-                }
-                if ($product->quantity < $item['quantity']) {
-                    throw new \Exception("Sản phẩm {$product->name} không đủ số lượng (còn {$product->quantity})");
-                }
-            }
-
-            // Calculate total
-            $totalAmount = 0;
-            foreach ($items as $item) {
-                $totalAmount += $item['price'] * $item['quantity'];
-            }
-
-            // Create order
-            $order = Order::create([
-                'user_id' => $request->user()->id,
-                'receiver_name' => $shippingAddress['name'],
-                'receiver_phone' => $shippingAddress['phone'],
-                'receiver_address' => $shippingAddress['full_address'],
-                'payment_method' => $paymentMethod,
-                'total_amount' => $totalAmount,
-                'status' => 'pending',
-                'note' => $request->note ?? null,
-            ]);
-
-            // Create order items and update stock
-            foreach ($items as $item) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item['product_id'],
-                    'price' => $item['price'],
-                    'quantity' => $item['quantity'],
+            if ($result['payment_type'] === 'cod') {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Đặt hàng thành công',
+                    'data' => [
+                        'id' => $result['order']->id,
+                        'order' => $result['order']
+                    ]
                 ]);
-
-                // Update product quantity
-                $product = Product::find($item['product_id']);
-                $product->quantity -= $item['quantity'];
-                $product->save();
             }
-
-            // Create payment
-            $paymentStatus = 'pending';
-            Payment::create([
-            'order_id' => $order->id,
-            'payment_method' => $paymentMethod,
-            'amount' => $totalAmount,
-            'status' => $paymentStatus,
-            'transaction_code' => 'TXN' . time() . rand(1000, 9999),
-            ]);
-
-            // Nếu là COD
-            if ($paymentMethod === 'cod') {
-
-            $cart = Cart::where('user_id', $request->user()->id)->first();
-
-            if ($cart) {
-                $cart->items()->delete();
-            }
-
-            DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Đặt hàng thành công',
-                'data' => [
-                    'id' => $order->id,
-                    'order' => $order->load(['items.product', 'payment'])
-                ]
+                'payment_type' => 'payos',
+                'checkoutUrl' => $result['checkoutUrl'],
+                'order_id' => $result['order_id']
             ]);
-
-            }
-
-            // Thanh toán PayOS
-            $payOS = new PayOS(
-            config('services.payos.client_id'),
-            config('services.payos.api_key'),
-            config('services.payos.checksum_key')
-            );
-
-            $orderCode = intval(date('ymdHis') . rand(10, 99));
-
-            $paymentData = [
-            "orderCode" => $orderCode,
-            "amount" => (int)$totalAmount,
-            "description" => "DH-" . $order->id,
-            "returnUrl" => url('/payment/success'),
-            "cancelUrl" => url('/payment/cancel')
-            ];
-
-            try {
-
-    $response = $payOS->createPaymentLink($paymentData);
-
-} catch (\Exception $e) {
-
-    return response()->json([
-        'success' => false,
-        'message' => $e->getMessage()
-    ], 500);
-}
-
-
-            DB::commit();
-
-            return response()->json([
-            'success' => true,
-            'payment_type' => 'payos',
-            'checkoutUrl' => $response['checkoutUrl'],
-            'order_id' => $order->id
-            ]);
-
 
         } catch (\Exception $e) {
-            DB::rollBack();
-
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
                 'error' => $e->getMessage()
-            ], 500);
+            ], $code);
         }
     }
 
@@ -238,7 +113,7 @@ class OrderController extends Controller
             'receiver_name' => 'required|string|max:255',
             'receiver_phone' => 'required|string|max:20',
             'receiver_address' => 'required|string',
-                'payment_method' => 'required|string',
+            'payment_method' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -249,155 +124,40 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $cart = Cart::with('items.product')
-            ->where('user_id', $request->user()->id)
-            ->first();
-
-        if (!$cart || $cart->items->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Giỏ hàng trống'
-            ], 400);
-        }
-
         try {
-            DB::beginTransaction();
-
-            $paymentMethod = $this->normalizePaymentMethod($request->payment_method);
-
-            if (! in_array($paymentMethod, ['cod', 'banking', 'wallet'], true)) {
-                throw new \Exception('Phương thức thanh toán không hợp lệ');
-            }
-
-            // Check stock
-            foreach ($cart->items as $item) {
-                if ($item->product->quantity < $item->quantity) {
-                    throw new \Exception("Sản phẩm {$item->product->name} không đủ số lượng");
-                }
-            }
-
-            // Calculate total
-            $totalAmount = 0;
-            foreach ($cart->items as $item) {
-                $totalAmount += $item->product->price * $item->quantity;
-            }
-
-            // Create order
-            $order = Order::create([
-                'user_id' => $request->user()->id,
-                'receiver_name' => $request->receiver_name,
-                'receiver_phone' => $request->receiver_phone,
-                'receiver_address' => $request->receiver_address,
-                'payment_method' => $paymentMethod,
-                'total_amount' => $totalAmount,
-                'status' => 'pending',
-            ]);
-
-            // Create order items and update stock
-            foreach ($cart->items as $item) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item->product_id,
-                    'price' => $item->product->price,
-                    'quantity' => $item->quantity,
-                ]);
-
-                // Update product quantity
-                $product = Product::find($item->product_id);
-                $product->quantity -= $item->quantity;
-                $product->save();
-            }
-
-            // Create payment
-            Payment::create([
-                'order_id' => $order->id,
-                'payment_method' => $paymentMethod,
-                'amount' => $totalAmount,
-                'status' => $paymentMethod === 'cod' ? 'pending' : 'pending',
-                'transaction_code' => 'TXN' . time() . rand(1000, 9999),
-            ]);
-
-            // Clear cart
-            $cart->items()->delete();
-
-            // COD is pending on delivery, online payments wait for confirmation
-            $order->status = $paymentMethod === 'cod' ? 'pending' : 'pending';
-            $order->save();
-
-            DB::commit();
-
+            $order = $this->orderService->checkoutFromCart($request->all(), $request->user());
             return response()->json([
                 'success' => true,
                 'message' => 'Thanh toán thành công',
                 'data' => [
-                    'order' => $order->load(['items.product', 'payment'])
+                    'order' => $order
                 ]
             ]);
-
         } catch (\Exception $e) {
-            DB::rollBack();
-
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
             return response()->json([
                 'success' => false,
                 'message' => 'Thanh toán thất bại. Vui lòng thử lại sau.',
                 'error' => $e->getMessage()
-            ], 500);
+            ], $code);
         }
     }
 
     public function cancelOrder(Request $request, $id)
     {
-        $order = Order::where('user_id', $request->user()->id)->find($id);
-
-        if (!$order) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Đơn hàng không tồn tại'
-            ], 404);
-        }
-
-        if ($order->status === 'cancelled') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Đơn hàng đã bị hủy trước đó'
-            ], 400);
-        }
-
-        if (in_array($order->status, ['shipping', 'completed'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không thể hủy đơn hàng ở trạng thái này'
-            ], 400);
-        }
-
         try {
-            DB::beginTransaction();
-
-            // Restore product quantity
-            foreach ($order->items as $item) {
-                $product = Product::find($item->product_id);
-                $product->quantity += $item->quantity;
-                $product->save();
-            }
-
-            $order->status = 'cancelled';
-            $order->save();
-
-            DB::commit();
-
+            $this->orderService->cancelOrder($request->user()->id, (int)$id);
             return response()->json([
                 'success' => true,
                 'message' => 'Đã hủy đơn hàng thành công'
             ]);
-
         } catch (\Exception $e) {
-            DB::rollBack();
-
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
             return response()->json([
                 'success' => false,
-                'message' => 'Không thể hủy đơn hàng',
+                'message' => $e->getMessage(),
                 'error' => $e->getMessage()
-            ], 500);
+            ], $code);
         }
     }
 }

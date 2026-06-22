@@ -74,11 +74,6 @@ class User extends Authenticatable
         return $this->hasMany(Review::class);
     }
 
-    public function socialAccounts()
-    {
-        return $this->hasMany(SocialAccount::class);
-    }
-
     public function isAdmin()
     {
         return $this->role === 'admin';

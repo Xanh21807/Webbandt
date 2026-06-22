@@ -1049,102 +1049,108 @@ async function updateOrderStatus() {
 }
 
 async function confirmPayment(id) {
-    if (!confirm('Xác nhận đơn hàng này đã được thanh toán?')) return;
-
-    const token = localStorage.getItem('auth_token');
-
-    try {
-        const response = await fetch(`/api/admin/orders/${id}/confirm-payment`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json'
+    showAdminConfirm(
+        'Xác nhận đơn hàng này đã được thanh toán?',
+        async () => {
+            const token = localStorage.getItem('auth_token');
+            try {
+                const response = await fetch(`/api/admin/orders/${id}/confirm-payment`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    alert('Đã xác nhận thanh toán thành công!');
+                    loadOrders(currentPage);
+                    loadOrderCounts();
+                } else {
+                    const data = await response.json().catch(() => ({}));
+                    alert(data.message || 'Không thể xác nhận thanh toán');
+                }
+            } catch (error) {
+                console.error('Error confirming payment:', error);
+                alert('Không thể xác nhận thanh toán');
             }
-        });
-
-        if (response.ok) {
-            alert('Đã xác nhận thanh toán thành công!');
-            loadOrders(currentPage);
-            loadOrderCounts();
-        } else {
-            const data = await response.json().catch(() => ({}));
-            alert(data.message || 'Không thể xác nhận thanh toán');
-        }
-    } catch (error) {
-        console.error('Error confirming payment:', error);
-        alert('Không thể xác nhận thanh toán');
-    }
+        },
+        { title: 'Xác nhận thanh toán?', confirmText: 'Xác nhận', type: 'info' }
+    );
 }
 
 // Quick action functions
-async function quickUpdateStatus(id, status, confirmMessage) {
-    if (!confirm(confirmMessage)) return;
-    
-    const token = localStorage.getItem('auth_token');
-    
-    try {
-        const response = await fetch(`/api/admin/orders/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ status })
-        });
-        
-        if (response.ok) {
-            loadOrders(currentPage);
-            loadOrderCounts();
-        } else {
-            alert('Không thể cập nhật trạng thái');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-    }
+async function quickUpdateStatus(id, status, confirmMessage, confirmTitle, confirmType) {
+    showAdminConfirm(
+        confirmMessage,
+        async () => {
+            const token = localStorage.getItem('auth_token');
+            try {
+                const response = await fetch(`/api/admin/orders/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ status })
+                });
+                if (response.ok) {
+                    loadOrders(currentPage);
+                    loadOrderCounts();
+                } else {
+                    alert('Không thể cập nhật trạng thái');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        },
+        { title: confirmTitle || 'Xác nhận', confirmText: 'Xác nhận', type: confirmType || 'info' }
+    );
 }
 
 function confirmOrder(id) {
-    quickUpdateStatus(id, 'paid', 'Xác nhận đơn hàng này?');
+    quickUpdateStatus(id, 'paid', 'Xác nhận đơn hàng này và chuyển sang trạng thái đã xác nhận?', 'Xác nhận đơn hàng', 'info');
 }
 
 function cancelOrder(id) {
-    quickUpdateStatus(id, 'cancelled', 'Hủy đơn hàng này?');
+    quickUpdateStatus(id, 'cancelled', 'Hủy đơn hàng này? Hành động này không thể hoàn tác.', 'Hủy đơn hàng', 'danger');
 }
 
 function shipOrder(id) {
-    quickUpdateStatus(id, 'shipping', 'Chuyển sang trạng thái đang giao hàng?');
+    quickUpdateStatus(id, 'shipping', 'Chuyển đơn hàng sang trạng thái đang giao hàng?', 'Giao hàng', 'info');
 }
 
 function completeOrder(id) {
-    quickUpdateStatus(id, 'completed', 'Xác nhận đơn hàng đã hoàn thành?');
+    quickUpdateStatus(id, 'completed', 'Xác nhận đơn hàng đã hoàn thành?', 'Hoàn thành đơn hàng', 'info');
 }
 
 async function deleteOrder(id) {
-    if (!confirm('Bạn có chắc muốn xóa đơn hàng này?')) return;
-    
-    const token = localStorage.getItem('auth_token');
-    
-    try {
-        const response = await fetch(`/api/admin/orders/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json'
+    showAdminConfirm(
+        'Đơn hàng này sẽ bị xóa vĩnh viễn và không thể khôi phục.',
+        async () => {
+            const token = localStorage.getItem('auth_token');
+            try {
+                const response = await fetch(`/api/admin/orders/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    alert('Đã xóa đơn hàng thành công');
+                    loadOrders(currentPage);
+                    loadOrderCounts();
+                } else {
+                    alert('Không thể xóa đơn hàng');
+                }
+            } catch (error) {
+                console.error('Error deleting order:', error);
             }
-        });
-        
-        if (response.ok) {
-            alert('Đã xóa đơn hàng');
-            loadOrders(currentPage);
-            loadOrderCounts();
-        } else {
-            alert('Không thể xóa đơn hàng');
-        }
-    } catch (error) {
-        console.error('Error deleting order:', error);
-    }
+        },
+        { title: 'Xóa đơn hàng?', confirmText: 'Xóa', type: 'danger' }
+    );
 }
 
 function toggleSelectAll() {

@@ -859,29 +859,31 @@ async function saveUser() {
 }
 
 async function deleteUser(id) {
-    if (!confirm('Bạn có chắc muốn xóa khách hàng này?')) return;
-    
-    const token = localStorage.getItem('auth_token');
-    
-    try {
-        const response = await fetch(`/api/admin/users/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json'
+    showAdminConfirm(
+        'Khách hàng này sẽ bị xóa vĩnh viễn cùng toàn bộ dữ liệu liên quan.',
+        async () => {
+            const token = localStorage.getItem('auth_token');
+            try {
+                const response = await fetch(`/api/admin/users/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    alert('Đã xóa khách hàng thành công');
+                    loadUsers(currentPage);
+                    loadUserStats();
+                } else {
+                    alert('Không thể xóa khách hàng');
+                }
+            } catch (error) {
+                console.error('Error deleting user:', error);
             }
-        });
-        
-        if (response.ok) {
-            alert('Đã xóa khách hàng');
-            loadUsers(currentPage);
-            loadUserStats();
-        } else {
-            alert('Không thể xóa khách hàng');
-        }
-    } catch (error) {
-        console.error('Error deleting user:', error);
-    }
+        },
+        { title: 'Xóa khách hàng?', confirmText: 'Xóa', type: 'danger' }
+    );
 }
 
 function toggleSelectAll() {

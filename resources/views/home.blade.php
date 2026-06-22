@@ -7,41 +7,15 @@
 <section class="hero-banner">
     <div class="container">
         <div class="banner-slider" id="bannerSlider">
-            <div class="banner-slide active">
-                <div class="banner-content">
-                    <span class="banner-tag">HOT DEAL</span>
-                    <h1>iPhone 15 Pro Max</h1>
-                    <p>Trải nghiệm đỉnh cao công nghệ với chip A17 Pro mạnh mẽ</p>
-                    <div class="banner-price">
-                        <span class="price-old">34.990.000₫</span>
-                        <span class="price-new">29.990.000₫</span>
-                    </div>
-                    <a href="/products/1" class="btn btn-primary">
-                        Mua ngay
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-                <div class="banner-image">
-                    <img src="/storage/product-images/product-image-025.jpg" alt="iPhone 15 Pro Max">
-                </div>
+            <div class="banner-slide active banner-slide-full">
+                <a href="/products/2">
+                    <img src="/images/banner_s24.png" alt="Samsung Galaxy S24 Ultra">
+                </a>
             </div>
-            <div class="banner-slide">
-                <div class="banner-content">
-                    <span class="banner-tag">MỚI</span>
-                    <h1>Samsung Galaxy S24 Ultra</h1>
-                    <p>Sáng tạo không giới hạn với Galaxy AI tích hợp</p>
-                    <div class="banner-price">
-                        <span class="price-old">33.990.000₫</span>
-                        <span class="price-new">28.990.000₫</span>
-                    </div>
-                    <a href="/products/2" class="btn btn-primary">
-                        Mua ngay
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-                <div class="banner-image">
-                    <img src="/storage/product-images/samsungs24ult.jpg" alt="Samsung Galaxy S24 Ultra">
-                </div>
+            <div class="banner-slide banner-slide-full">
+                <a href="/products/1">
+                    <img src="/images/banner-iphone15-aloviet.png" alt="iPhone 15">
+                </a>
             </div>
         </div>
         <div class="banner-dots">
@@ -131,24 +105,30 @@
         <div class="section-header">
             <h2><i class="fas fa-building"></i> Thương hiệu nổi tiếng</h2>
         </div>
+
         <div class="brands-grid" id="brandsGrid">
-            <a href="/products?brand=apple" class="brand-card">
-                <img src="https://placehold.co/120x60/f5f5f5/333?text=Apple" alt="Apple">
+            <a href="{{ url('/products?brand=apple') }}" class="brand-card">
+                <img src="{{ asset('images/iphone.jpg') }}" alt="Apple">
             </a>
-            <a href="/products?brand=samsung" class="brand-card">
-                <img src="https://placehold.co/120x60/f5f5f5/333?text=Samsung" alt="Samsung">
+
+            <a href="{{ url('/products?brand=samsung') }}" class="brand-card">
+                <img src="{{ asset('images/samsung.jpg') }}" alt="Samsung">
             </a>
-            <a href="/products?brand=xiaomi" class="brand-card">
-                <img src="https://placehold.co/120x60/f5f5f5/333?text=Xiaomi" alt="Xiaomi">
+
+            <a href="{{ url('/products?brand=xiaomi') }}" class="brand-card">
+                <img src="{{ asset('images/xiaomi.jpg') }}" alt="Xiaomi">
             </a>
-            <a href="/products?brand=oppo" class="brand-card">
-                <img src="https://placehold.co/120x60/f5f5f5/333?text=OPPO" alt="OPPO">
+
+            <a href="{{ url('/products?brand=oppo') }}" class="brand-card">
+                <img src="{{ asset('images/oppo.jpg') }}" alt="OPPO">
             </a>
-            <a href="/products?brand=vivo" class="brand-card">
-                <img src="https://placehold.co/120x60/f5f5f5/333?text=Vivo" alt="Vivo">
+
+            <a href="{{ url('/products?brand=vivo') }}" class="brand-card">
+                <img src="{{ asset('images/vivo.jpg') }}" alt="Vivo">
             </a>
-            <a href="/products?brand=realme" class="brand-card">
-                <img src="https://placehold.co/120x60/f5f5f5/333?text=Realme" alt="Realme">
+
+            <a href="{{ url('/products?brand=realme') }}" class="brand-card">
+                <img src="{{ asset('images/realme.jpg') }}" alt="Realme">
             </a>
         </div>
     </div>
@@ -243,6 +223,25 @@
 
 .banner-slide.active {
     display: flex;
+}
+
+.banner-slide-full {
+    padding: 0 !important;
+    min-height: auto !important;
+    background: transparent !important;
+    width: 100%;
+}
+
+.banner-slide-full a {
+    display: block;
+    width: 100%;
+}
+
+.banner-slide-full img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 16px;
 }
 
 .banner-content {
@@ -649,19 +648,30 @@ async function loadCategories() {
             return;
         }
         
-        const icons = ['fa-apple-alt', 'fa-mobile-alt', 'fa-tablet-alt', 'fa-laptop', 'fa-headphones'];
-        const brandImages = {
-            'iPhone': 'https://cdn.tgdd.vn/Brand/1/logo-iphone-220x48.png',
-            'Samsung': 'https://cdn.tgdd.vn/Brand/1/logo-samsung-220x48-1.png',
-            'Xiaomi': 'https://cdn.tgdd.vn/Brand/1/logo-xiaomi-220x48-5.png',
-            'Oppo': 'https://cdn.tgdd.vn/Brand/1/OPPO42-b_5.png',
-            'Vivo': 'https://cdn.tgdd.vn/Brand/1/vivo42-b_54.jpg'
+        const getCategoryIconClass = (name) => {
+            const nameLower = name.toLowerCase();
+            if (nameLower.includes('iphone') || nameLower.includes('apple')) {
+                return 'fab fa-apple';
+            }
+            if (nameLower.includes('samsung') || nameLower.includes('xiaomi') || nameLower.includes('oppo') || nameLower.includes('vivo') || nameLower.includes('realme') || nameLower.includes('điện thoại') || nameLower.includes('phone')) {
+                return 'fas fa-mobile-alt';
+            }
+            if (nameLower.includes('phụ kiện') || nameLower.includes('tai nghe') || nameLower.includes('loa')) {
+                return 'fas fa-headphones';
+            }
+            if (nameLower.includes('sạc') || nameLower.includes('cáp') || nameLower.includes('pin')) {
+                return 'fas fa-charging-station';
+            }
+            if (nameLower.includes('ốp') || nameLower.includes('kính') || nameLower.includes('dán')) {
+                return 'fas fa-shield-alt';
+            }
+            return 'fas fa-folder';
         };
         
-        container.innerHTML = categories.slice(0, 5).map((category, i) => `
+        container.innerHTML = categories.slice(0, 5).map((category) => `
             <a href="/products?category=${category.id}" class="category-card">
                 <div class="category-icon">
-                    <i class="fas ${icons[i % icons.length]}"></i>
+                    <i class="${getCategoryIconClass(category.name)}"></i>
                 </div>
                 <div class="category-name">${category.name}</div>
                 <div class="category-count">${category.products_count || 0} sản phẩm</div>
@@ -707,8 +717,7 @@ async function loadProducts(endpoint, containerId, limit = 4) {
                         <span class="rating-count">(${product.reviews_count || Math.floor(Math.random() * 2000) + 500})</span>
                     </div>
                     <div class="product-specs">
-                        <span class="spec-tag">${product.ram || '8GB'}</span>
-                        <span class="spec-tag">${product.storage || '256GB'}</span>
+                        ${getProductSpecTags(product)}
                     </div>
                     <div class="product-price">
                         ${product.sale_price && Number(product.sale_price) < Number(product.price) ? `
@@ -732,6 +741,56 @@ async function loadProducts(endpoint, containerId, limit = 4) {
     } catch (error) {
         console.error('Error loading products:', error);
     }
+}
+
+// Return spec tag HTML based on product category
+function getProductSpecTags(product) {
+    const catId = product.category_id;
+    const catName = (product.category?.name || '').toLowerCase();
+    const name = (product.name || '').toLowerCase();
+    const phoneKeywords = ['iphone', 'samsung', 'xiaomi', 'oppo', 'vivo'];
+    const isPhone = catId <= 5 || phoneKeywords.some(k => catName.includes(k));
+
+    if (isPhone) {
+        const tags = [];
+        if (product.ram) tags.push(`<span class="spec-tag"><i class="fas fa-memory" style="font-size:10px"></i> ${product.ram}</span>`);
+        if (product.storage) tags.push(`<span class="spec-tag"><i class="fas fa-hdd" style="font-size:10px"></i> ${product.storage}</span>`);
+        if (product.battery) tags.push(`<span class="spec-tag"><i class="fas fa-battery-three-quarters" style="font-size:10px"></i> ${product.battery}</span>`);
+        return tags.length ? tags.join('') : '<span class="spec-tag">Điện thoại</span>';
+    }
+
+    if (catName.includes('tai nghe')) {
+        const type = name.includes('max') ? 'Over-ear' : 'TWS';
+        const anc = name.includes('airpods') || name.includes('bose') || name.includes('soundpeats') ? '<span class="spec-tag">ANC</span>' : '';
+        return `<span class="spec-tag">${type}</span><span class="spec-tag">Bluetooth 5.3</span>${anc}`;
+    }
+
+    if (catName.includes('ốp lưng') || catName.includes('op lung')) {
+        const isMagSafe = name.includes('magsafe') || (product.brand || '').toLowerCase() === 'apple';
+        return `<span class="spec-tag">Chính hãng</span>${isMagSafe ? '<span class="spec-tag">MagSafe</span>' : '<span class="spec-tag">Chống sốc</span>'}`;
+    }
+
+    if (catName.includes('cáp') || catName.includes('cap') || catName.includes('sạc')) {
+        const power = name.includes('250w') ? '250W' : name.includes('100w') ? '100W' : name.includes('65w') ? '65W' : name.includes('15w') ? '15W' : 'Sạc nhanh';
+        return `<span class="spec-tag">${power}</span><span class="spec-tag">GaN</span>`;
+    }
+
+    if (catName.includes('pin') || catName.includes('sạc dự phòng')) {
+        const capacity = product.battery || '';
+        return `${capacity ? `<span class="spec-tag">${capacity}</span>` : ''}<span class="spec-tag">Sạc nhanh</span>`;
+    }
+
+    if (catName.includes('miếng dán') || catName.includes('kính')) {
+        const isPrivacy = name.includes('privacy') || name.includes('chống nhìn');
+        return `<span class="spec-tag">9H</span>${isPrivacy ? '<span class="spec-tag">Chống nhìn trộm</span>' : '<span class="spec-tag">Chống trầy</span>'}`;
+    }
+
+    if (catName.includes('giá đỡ')) {
+        return `<span class="spec-tag">Đa năng</span><span class="spec-tag">Chính hãng</span>`;
+    }
+
+    // Fallback
+    return `<span class="spec-tag">${product.category?.name || 'Phụ kiện'}</span>`;
 }
 
 function getProductImage(product) {

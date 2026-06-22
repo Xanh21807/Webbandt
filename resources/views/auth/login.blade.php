@@ -277,23 +277,32 @@
             color: #dc2626;
             border: 1px solid #fecaca;
         }
+
+        .alert-warning {
+            background: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
     </style>
 </head>
 <body>
     <div class="auth-card">
         <!-- Logo -->
         <div class="auth-logo">
-            <div class="auth-logo-icon">
-                <i class="fas fa-mobile-alt"></i>
-            </div>
-            <div class="auth-logo-text">XanhStore</div>
+            <img src="{{ asset('images/logo.png') }}" alt="XanhStore" style="height: 70px; width: auto; object-fit: contain;">
         </div>
         
         <!-- Title -->
         <h1 class="auth-title">Đăng nhập</h1>
         <p class="auth-subtitle">Nhập email và mật khẩu để đăng nhập vào hệ thống</p>
         
-        <!-- Error Message -->
+        <!-- Thông báo từ URL param (bị khóa / token hết hạn) -->
+        <div id="reasonAlert" class="alert" style="display: none;">
+            <i id="reasonIcon" class="fas fa-lock"></i>
+            <span id="reasonMessage"></span>
+        </div>
+
+        <!-- Error Message (login failed) -->
         <div id="loginError" class="alert alert-error" style="display: none;">
             <i class="fas fa-exclamation-circle"></i>
             <span id="loginErrorMessage"></span>
@@ -352,6 +361,34 @@
     </div>
     
     <script>
+        // ====== Đọc URL param và hiển thị thông báo ngay khi trang load ======
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const reason = params.get('reason');
+
+            if (reason) {
+                const alertDiv  = document.getElementById('reasonAlert');
+                const iconEl    = document.getElementById('reasonIcon');
+                const messageEl = document.getElementById('reasonMessage');
+
+                if (reason === 'blocked') {
+                    alertDiv.className  = 'alert alert-warning';
+                    iconEl.className    = 'fas fa-lock';
+                    messageEl.textContent = 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên để được hỗ trợ.';
+                } else if (reason === 'expired') {
+                    alertDiv.className  = 'alert alert-error';
+                    iconEl.className    = 'fas fa-clock';
+                    messageEl.textContent = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+                }
+
+                alertDiv.style.display = 'flex';
+
+                // Xóa param khỏi URL để tránh hiện lại khi refresh
+                const cleanUrl = window.location.pathname;
+                window.history.replaceState({}, '', cleanUrl);
+            }
+        })();
+
         function togglePassword() {
             const input = document.getElementById('password');
             const icon = document.querySelector('.toggle-password i');
@@ -373,10 +410,12 @@
             const btn = document.getElementById('loginBtn');
             const errorDiv = document.getElementById('loginError');
             const errorMessage = document.getElementById('loginErrorMessage');
+            const reasonAlert = document.getElementById('reasonAlert');
             
             btn.disabled = true;
             btn.textContent = 'Đang đăng nhập...';
             errorDiv.style.display = 'none';
+            if (reasonAlert) reasonAlert.style.display = 'none';
             
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;

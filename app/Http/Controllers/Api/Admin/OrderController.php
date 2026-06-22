@@ -3,71 +3,28 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
-use App\Models\Payment;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
 {
-    /**
-     * Get order counts by status
-     */
+    protected $orderService;
+
+    public function __construct(OrderService $orderService)
+    {
+        $this->orderService = $orderService;
+    }
+
     public function counts()
     {
-        $counts = [
-            'all' => Order::count(),
-            'pending' => Order::where('status', 'pending')->count(),
-            'paid' => Order::where('status', 'paid')->count(),
-            'shipping' => Order::where('status', 'shipping')->count(),
-            'completed' => Order::where('status', 'completed')->count(),
-            'cancelled' => Order::where('status', 'cancelled')->count(),
-        ];
-
+        $counts = $this->orderService->getOrderCounts();
         return response()->json($counts);
     }
 
     public function index(Request $request)
     {
-        $query = Order::with(['user', 'items.product', 'payment']);
-
-        if ($request->has('status') && $request->status) {
-            $query->where('status', $request->status);
-        }
-
-        // Support both 'search' and 'keyword' params
-        $searchTerm = $request->get('search') ?? $request->get('keyword');
-        if ($searchTerm) {
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('receiver_name', 'like', "%{$searchTerm}%")
-                  ->orWhere('receiver_phone', 'like', "%{$searchTerm}%")
-                  ->orWhere('order_number', 'like', "%{$searchTerm}%")
-                  ->orWhere('id', 'like', "%{$searchTerm}%")
-                  ->orWhereHas('user', function ($q2) use ($searchTerm) {
-                      $q2->where('name', 'like', "%{$searchTerm}%")
-                        ->orWhere('email', 'like', "%{$searchTerm}%");
-                  });
-            });
-        }
-
-        // Date filters
-        if ($request->has('date_from') && $request->date_from) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-        if ($request->has('date_to') && $request->date_to) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
-
-        // Payment method filter
-        if ($request->has('payment_method') && $request->payment_method) {
-            $query->whereHas('payment', function($q) use ($request) {
-                $q->where('payment_method', $request->payment_method);
-            });
-        }
-
-        $orders = $query->orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+        $orders = $this->orderService->getAdminOrders($request->all(), $request->get('per_page', 15));
 
         return response()->json([
             'success' => true,
@@ -77,21 +34,21 @@ class OrderController extends Controller
 
     public function show($id)
     {
-        $order = Order::with(['user', 'items.product.images', 'payment'])->find($id);
-
-        if (!$order) {
+        try {
+            $order = $this->orderService->getAdminOrder((int)$id);
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'order' => $order
+                ]
+            ]);
+        } catch (\Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
             return response()->json([
                 'success' => false,
-                'message' => 'Đơn hàng không tồn tại'
-            ], 404);
+                'message' => $e->getMessage()
+            ], $code);
         }
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'order' => $order
-            ]
-        ]);
     }
 
     public function updateStatus(Request $request, $id)
@@ -108,65 +65,42 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $order = Order::find($id);
-
-        if (!$order) {
+        try {
+            $order = $this->orderService->updateOrderStatus((int)$id, $request->status);
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật trạng thái đơn hàng thành công',
+                'data' => [
+                    'order' => $order
+                ]
+            ]);
+        } catch (\Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
             return response()->json([
                 'success' => false,
-                'message' => 'Đơn hàng không tồn tại'
-            ], 404);
+                'message' => $e->getMessage()
+            ], $code);
         }
-
-        $order->status = $request->status;
-        $order->save();
-
-        if ($request->status === 'paid' && $order->payment) {
-            $order->payment->status = 'completed';
-            $order->payment->paid_at = Carbon::now();
-            $order->payment->save();
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Cập nhật trạng thái đơn hàng thành công',
-            'data' => [
-                'order' => $order
-            ]
-        ]);
     }
 
     public function confirmPayment(Request $request, $id)
     {
-        $order = Order::with('payment')->find($id);
-
-        if (!$order) {
+        try {
+            $order = $this->orderService->confirmPayment((int)$id);
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã xác nhận đơn hàng đã thanh toán',
+                'data' => [
+                    'order' => $order
+                ]
+            ]);
+        } catch (\Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
             return response()->json([
                 'success' => false,
-                'message' => 'Đơn hàng không tồn tại'
-            ], 404);
+                'message' => $e->getMessage()
+            ], $code);
         }
-
-        if (!$order->payment) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Đơn hàng này chưa có thông tin thanh toán'
-            ], 404);
-        }
-
-        $order->status = 'paid';
-        $order->save();
-
-        $order->payment->status = 'completed';
-        $order->payment->paid_at = Carbon::now();
-        $order->payment->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Đã xác nhận đơn hàng đã thanh toán',
-            'data' => [
-                'order' => $order->load(['user', 'items.product', 'payment'])
-            ]
-        ]);
     }
 
     public function cancel(Request $request, $id)
@@ -183,50 +117,24 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $order = Order::find($id);
-
-        if (!$order) {
+        try {
+            $order = $this->orderService->adminCancel((int)$id, $request->reason);
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã hủy đơn hàng'
+            ]);
+        } catch (\Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
             return response()->json([
                 'success' => false,
-                'message' => 'Đơn hàng không tồn tại'
-            ], 404);
+                'message' => $e->getMessage()
+            ], $code);
         }
-
-        if ($order->status === 'cancelled') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Đơn hàng đã bị hủy'
-            ], 400);
-        }
-
-        $order->status = 'cancelled';
-        $order->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Đã hủy đơn hàng'
-        ]);
     }
 
-    /**
-     * Get recent orders for dashboard
-     */
     public function recentOrders()
     {
-        $orders = Order::with(['user'])
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function ($order) {
-                return [
-                    'id' => $order->id,
-                    'customer_name' => $order->receiver_name ?? ($order->user->name ?? 'N/A'),
-                    'total' => $order->total_amount,
-                    'status' => $order->status,
-                    'created_at' => $order->created_at
-                ];
-            });
-
+        $orders = $this->orderService->getRecentOrders();
         return response()->json([
             'success' => true,
             'data' => $orders
@@ -235,28 +143,18 @@ class OrderController extends Controller
 
     public function destroy($id)
     {
-        $order = Order::find($id);
-
-        if (!$order) {
+        try {
+            $this->orderService->deleteOrder((int)$id);
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã xóa đơn hàng'
+            ]);
+        } catch (\Exception $e) {
+            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
             return response()->json([
                 'success' => false,
-                'message' => 'Đơn hàng không tồn tại'
-            ], 404);
+                'message' => $e->getMessage()
+            ], $code);
         }
-
-        // Delete order items first
-        $order->items()->delete();
-        
-        // Delete payment if exists
-        if ($order->payment) {
-            $order->payment->delete();
-        }
-
-        $order->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Đã xóa đơn hàng'
-        ]);
     }
 }

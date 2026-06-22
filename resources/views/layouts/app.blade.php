@@ -449,13 +449,7 @@
             <div class="container flex items-center justify-between">
                 <!-- Logo -->
                 <a href="{{ url('/') }}" class="header-logo">
-                    <div class="header-logo-icon">
-                        <i class="fas fa-mobile-alt"></i>
-                    </div>
-                    <div class="header-logo-text">
-                        <h1>XanhStore</h1>
-                        <span>Điện thoại chính hãng</span>
-                    </div>
+                    <img src="{{ asset('images/logo.png') }}" alt="XanhStore" style="height: 48px; width: auto; object-fit: contain;">
                 </a>
                 
                 <!-- Search -->
@@ -463,6 +457,9 @@
                     <div class="header-search-input">
                         <i class="fas fa-search"></i>
                         <input type="text" id="searchInput" placeholder="Bạn cần tìm gì..." autocomplete="off">
+                        <a href="{{ url('/products') }}" class="advanced-search-btn" title="Tìm kiếm nâng cao" id="advancedSearchBtn">
+                            <i class="fas fa-sliders-h"></i>
+                        </a>
                     </div>
                     <div class="search-dropdown" id="searchDropdown" style="display: none;">
                         <div class="search-loading" id="searchLoading" style="display: none;">
@@ -471,6 +468,11 @@
                         <div class="search-results" id="searchResults"></div>
                         <div class="search-empty" id="searchEmpty" style="display: none;">
                             Không tìm thấy sản phẩm nào
+                        </div>
+                        <div class="search-dropdown-footer">
+                            <a href="{{ url('/products') }}" id="advancedSearchDropdownLink">
+                                <i class="fas fa-sliders-h"></i> Tìm kiếm nâng cao (Lọc chi tiết)
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -534,33 +536,170 @@
         <nav class="header-nav">
             <div class="container">
                 <div class="header-nav-content">
-                    <div class="dropdown">
+                    <div class="dropdown category-dropdown">
                         <button class="header-nav-btn">
                             <i class="fas fa-bars"></i>
-                            📱 Danh mục
+                            Danh mục
                             <i class="fas fa-chevron-down"></i>
                         </button>
-                        <div class="dropdown-menu" style="top: 100%; left: 0;">
-                            <a href="{{ url('/products?category=iphone') }}">
-                                <i class="fab fa-apple"></i>
-                                iPhone
-                            </a>
-                            <a href="{{ url('/products?category=samsung') }}">
-                                <i class="fas fa-mobile-alt"></i>
-                                Samsung
-                            </a>
-                            <a href="{{ url('/products?category=xiaomi') }}">
-                                <i class="fas fa-mobile-alt"></i>
-                                Xiaomi
-                            </a>
-                            <a href="{{ url('/products?category=oppo') }}">
-                                <i class="fas fa-mobile-alt"></i>
-                                OPPO
-                            </a>
-                            <a href="{{ url('/products?category=vivo') }}">
-                                <i class="fas fa-mobile-alt"></i>
-                                Vivo
-                            </a>
+                        <div class="dropdown-menu category-menu" style="top: 100%; left: 0;">
+                            <!-- iPhone -->
+                            <div class="category-item-wrapper">
+                                <a href="{{ url('/products?category=iphone') }}" class="category-menu-item">
+                                    <span class="item-left">
+                                        <i class="fab fa-apple"></i>
+                                        <span>iPhone</span>
+                                    </span>
+                                    <i class="fas fa-chevron-right chevron-right"></i>
+                                </a>
+                                <div class="category-submenu">
+                                    <div class="submenu-column">
+                                        <h4>Dòng sản phẩm</h4>
+                                        <a href="{{ url('/products?search=iPhone+16') }}">iPhone 16 Series</a>
+                                        <a href="{{ url('/products?search=iPhone+15') }}">iPhone 15 Series</a>
+                                        <a href="{{ url('/products?search=iPhone+14') }}">iPhone 14 Series</a>
+                                        <a href="{{ url('/products?search=iPhone+13') }}">iPhone 13 Series</a>
+                                    </div>
+                                    <div class="submenu-column">
+                                        <h4>Chọn theo mức giá</h4>
+                                        <a href="{{ url('/products?category_id=1&price_range=under_10') }}">Dưới 10 triệu</a>
+                                        <a href="{{ url('/products?category_id=1&price_range=10_20') }}">10 - 20 triệu</a>
+                                        <a href="{{ url('/products?category_id=1&price_range=20_30') }}">20 - 30 triệu</a>
+                                        <a href="{{ url('/products?category_id=1&price_range=over_30') }}">Trên 30 triệu</a>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Samsung -->
+                            <div class="category-item-wrapper">
+                                <a href="{{ url('/products?category=samsung') }}" class="category-menu-item">
+                                    <span class="item-left">
+                                        <i class="fas fa-mobile-alt"></i>
+                                        <span>Samsung</span>
+                                    </span>
+                                    <i class="fas fa-chevron-right chevron-right"></i>
+                                </a>
+                                <div class="category-submenu">
+                                    <div class="submenu-column">
+                                        <h4>Dòng sản phẩm</h4>
+                                        <a href="{{ url('/products?search=Galaxy+S') }}">Galaxy S Series</a>
+                                        <a href="{{ url('/products?search=Galaxy+Z') }}">Galaxy Z Fold / Flip</a>
+                                        <a href="{{ url('/products?search=Galaxy+A') }}">Galaxy A Series</a>
+                                        <a href="{{ url('/products?search=Galaxy+M') }}">Galaxy M Series</a>
+                                    </div>
+                                    <div class="submenu-column">
+                                        <h4>Chọn theo mức giá</h4>
+                                        <a href="{{ url('/products?category_id=2&price_range=under_5') }}">Dưới 5 triệu</a>
+                                        <a href="{{ url('/products?category_id=2&price_range=5_10') }}">5 - 10 triệu</a>
+                                        <a href="{{ url('/products?category_id=2&price_range=10_20') }}">10 - 20 triệu</a>
+                                        <a href="{{ url('/products?category_id=2&price_range=over_20') }}">Trên 20 triệu</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Xiaomi -->
+                            <div class="category-item-wrapper">
+                                <a href="{{ url('/products?category=xiaomi') }}" class="category-menu-item">
+                                    <span class="item-left">
+                                        <i class="fas fa-mobile-alt"></i>
+                                        <span>Xiaomi</span>
+                                    </span>
+                                    <i class="fas fa-chevron-right chevron-right"></i>
+                                </a>
+                                <div class="category-submenu">
+                                    <div class="submenu-column">
+                                        <h4>Dòng sản phẩm</h4>
+                                        <a href="{{ url('/products?search=Xiaomi+14') }}">Xiaomi Series</a>
+                                        <a href="{{ url('/products?search=Redmi+Note') }}">Redmi Note Series</a>
+                                        <a href="{{ url('/products?search=POCO') }}">POCO Series</a>
+                                        <a href="{{ url('/products?search=Redmi+13') }}">Redmi Series</a>
+                                    </div>
+                                    <div class="submenu-column">
+                                        <h4>Chọn theo mức giá</h4>
+                                        <a href="{{ url('/products?category_id=3&price_range=under_5') }}">Dưới 5 triệu</a>
+                                        <a href="{{ url('/products?category_id=3&price_range=5_10') }}">5 - 10 triệu</a>
+                                        <a href="{{ url('/products?category_id=3&price_range=10_20') }}">10 - 20 triệu</a>
+                                        <a href="{{ url('/products?category_id=3&price_range=over_20') }}">Trên 20 triệu</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- OPPO -->
+                            <div class="category-item-wrapper">
+                                <a href="{{ url('/products?category=oppo') }}" class="category-menu-item">
+                                    <span class="item-left">
+                                        <i class="fas fa-mobile-alt"></i>
+                                        <span>OPPO</span>
+                                    </span>
+                                    <i class="fas fa-chevron-right chevron-right"></i>
+                                </a>
+                                <div class="category-submenu">
+                                    <div class="submenu-column">
+                                        <h4>Dòng sản phẩm</h4>
+                                        <a href="{{ url('/products?search=Find') }}">Find Series (Gập)</a>
+                                        <a href="{{ url('/products?search=Reno') }}">Reno Series</a>
+                                        <a href="{{ url('/products?search=OPPO+A') }}">A Series</a>
+                                    </div>
+                                    <div class="submenu-column">
+                                        <h4>Chọn theo mức giá</h4>
+                                        <a href="{{ url('/products?category_id=4&price_range=under_5') }}">Dưới 5 triệu</a>
+                                        <a href="{{ url('/products?category_id=4&price_range=5_10') }}">5 - 10 triệu</a>
+                                        <a href="{{ url('/products?category_id=4&price_range=10_20') }}">10 - 20 triệu</a>
+                                        <a href="{{ url('/products?category_id=4&price_range=over_20') }}">Trên 20 triệu</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Vivo -->
+                            <div class="category-item-wrapper">
+                                <a href="{{ url('/products?category=vivo') }}" class="category-menu-item">
+                                    <span class="item-left">
+                                        <i class="fas fa-mobile-alt"></i>
+                                        <span>Vivo</span>
+                                    </span>
+                                    <i class="fas fa-chevron-right chevron-right"></i>
+                                </a>
+                                <div class="category-submenu">
+                                    <div class="submenu-column">
+                                        <h4>Dòng sản phẩm</h4>
+                                        <a href="{{ url('/products?search=Vivo+X') }}">X Series (Cao cấp)</a>
+                                        <a href="{{ url('/products?search=Vivo+V') }}">V Series</a>
+                                        <a href="{{ url('/products?search=Vivo+Y') }}">Y Series</a>
+                                    </div>
+                                    <div class="submenu-column">
+                                        <h4>Chọn theo mức giá</h4>
+                                        <a href="{{ url('/products?category_id=5&price_range=under_5') }}">Dưới 5 triệu</a>
+                                        <a href="{{ url('/products?category_id=5&price_range=5_10') }}">5 - 10 triệu</a>
+                                        <a href="{{ url('/products?category_id=5&price_range=10_20') }}">10 - 20 triệu</a>
+                                        <a href="{{ url('/products?category_id=5&price_range=over_20') }}">Trên 20 triệu</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Accessories -->
+                            <div class="category-item-wrapper">
+                                <a href="{{ url('/products?category=phu-kien') }}" class="category-menu-item">
+                                    <span class="item-left">
+                                        <i class="fas fa-headphones"></i>
+                                        <span>Phụ kiện</span>
+                                    </span>
+                                    <i class="fas fa-chevron-right chevron-right"></i>
+                                </a>
+                                <div class="category-submenu">
+                                    <div class="submenu-column">
+                                        <h4>Ốp lưng & Miếng dán</h4>
+                                        <a href="{{ url('/products?category_id=6') }}">Ốp lưng chống sốc</a>
+                                        <a href="{{ url('/products?category_id=10') }}">Kính cường lực</a>
+                                        <a href="{{ url('/products?category_id=11') }}">Giá đỡ & Gimbal</a>
+                                    </div>
+                                    <div class="submenu-column">
+                                        <h4>Sạc & Tai nghe</h4>
+                                        <a href="{{ url('/products?category_id=7') }}">Cáp sạc, Củ sạc nhanh</a>
+                                        <a href="{{ url('/products?category_id=8') }}">Tai nghe Bluetooth</a>
+                                        <a href="{{ url('/products?category_id=9') }}">Sạc dự phòng</a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <a href="{{ url('/products?sale=1') }}" class="header-nav-link">
@@ -604,10 +743,7 @@
                 <!-- Brand -->
                 <div class="footer-brand">
                     <div class="footer-brand-logo">
-                        <div class="footer-brand-logo-icon">
-                            <i class="fas fa-mobile-alt"></i>
-                        </div>
-                        <span>XanhStore</span>
+                        <img src="{{ asset('images/logo.png') }}" alt="XanhStore" style="height: 40px; width: auto; object-fit: contain;">
                     </div>
                     <p>Chuyên cung cấp điện thoại chính hãng, giá tốt nhất thị trường. Bảo hành toàn quốc, đổi trả trong 30 ngày.</p>
                     <div class="footer-social">
@@ -721,6 +857,36 @@
     <!-- Scripts -->
     <script src="{{ asset('js/app.js') }}"></script>
     <script>
+        // ====== Global fetch interceptor: tự đăng xuất khi token hết hạn hoặc bị khóa ======
+        (function () {
+            const _originalFetch = window.fetch;
+            window.fetch = async function (...args) {
+                const response = await _originalFetch(...args);
+
+                if (response.status === 401 || response.status === 403) {
+                    // Clone để đọc body mà không tiêu thụ response
+                    const clone = response.clone();
+                    try {
+                        const data = await clone.json();
+                        const isBlocked = data.code === 'ACCOUNT_BLOCKED';
+                        const isUnauthorized = response.status === 401;
+
+                        if (isBlocked || isUnauthorized) {
+                            const hadToken = !!localStorage.getItem('auth_token');
+                            if (hadToken) {
+                                localStorage.clear();
+                                // Truyền lý do qua URL param để login page hiển thị popup
+                                const reason = isBlocked ? 'blocked' : 'expired';
+                                window.location.href = `/login?reason=${reason}`;
+                            }
+                        }
+                    } catch (_) {}
+                }
+
+                return response;
+            };
+        })();
+
         // Check auth state and update UI
         function checkAuthState() {
             const token = localStorage.getItem('auth_token');
@@ -881,6 +1047,14 @@
             searchInput.addEventListener('input', function() {
                 const query = this.value.trim();
                 
+                // Update advanced search links dynamically
+                const advancedSearchBtn = document.getElementById('advancedSearchBtn');
+                const advancedSearchDropdownLink = document.getElementById('advancedSearchDropdownLink');
+                const targetUrl = query ? `/products?search=${encodeURIComponent(query)}` : '/products';
+                
+                if (advancedSearchBtn) advancedSearchBtn.setAttribute('href', targetUrl);
+                if (advancedSearchDropdownLink) advancedSearchDropdownLink.setAttribute('href', targetUrl);
+                
                 clearTimeout(searchTimeout);
                 
                 if (query.length < 2) {
@@ -941,12 +1115,46 @@
             }
         }
         
+        // Get product image url helper
+        function getProductImage(product) {
+            const images = product.images || [];
+
+            if (images.length > 0) {
+                const firstImage = images[0];
+                return typeof firstImage === 'object' ? firstImage.image_url : firstImage;
+            }
+
+            const name = (product.name || '').toLowerCase();
+
+            if (name.includes('iphone')) {
+                return 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=300&h=300&fit=crop';
+            }
+
+            if (name.includes('samsung')) {
+                return 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=300&h=300&fit=crop';
+            }
+
+            if (name.includes('xiaomi')) {
+                return 'https://images.unsplash.com/photo-1598327106026-d9521da673d1?w=300&h=300&fit=crop';
+            }
+
+            if (name.includes('oppo')) {
+                return 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=300&h=300&fit=crop';
+            }
+
+            if (name.includes('vivo')) {
+                return 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=300&h=300&fit=crop';
+            }
+
+            return 'https://placehold.co/300x300/f3f4f6/111827?text=XanhStore';
+        }
+
         // Display search results
         function displaySearchResults(products) {
             searchResults.innerHTML = products.map(product => `
                 <a href="/products/${product.id}" class="search-item">
                     <div class="search-item-image">
-                        <img src="${product.image || 'https://placehold.co/50x50/f5f5f5/333?text=No+Image'}" alt="${product.name}">
+                        <img src="${getProductImage(product)}" alt="${product.name}">
                     </div>
                     <div class="search-item-info">
                         <div class="search-item-name">${product.name}</div>

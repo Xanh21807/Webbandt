@@ -995,7 +995,6 @@ function renderProduct() {
                     ${generateStars(product.average_rating || 0)}
                     <span>(${product.reviews_count || 0} đánh giá)</span>
                 </div>
-                <div class="product-sku">SKU: ${product.sku || 'N/A'}</div>
             </div>
             
             <div class="product-price-section">
@@ -1012,19 +1011,19 @@ function renderProduct() {
                 <span class="quantity-label">Số lượng:</span>
                 <div class="quantity-input">
                     <button onclick="changeQuantity(-1)">−</button>
-                    <input type="number" id="quantityInput" value="1" min="1" max="${product.stock || 99}" onchange="updateQuantity(this.value)">
+                    <input type="number" id="quantityInput" value="1" min="1" max="${product.quantity || 99}" onchange="updateQuantity(this.value)">
                     <button onclick="changeQuantity(1)">+</button>
                 </div>
-                <span class="stock-status ${product.stock > 0 ? '' : 'out-of-stock'}">
-                    ${product.stock > 0 ? `Còn ${product.stock} sản phẩm` : 'Hết hàng'}
+                <span class="stock-status ${product.quantity > 0 ? '' : 'out-of-stock'}">
+                    ${product.quantity > 0 ? `Còn ${product.quantity} sản phẩm` : 'Hết hàng'}
                 </span>
             </div>
             
             <div class="product-actions-section">
-                <button class="btn btn-primary" onclick="addToCart(${product.id})" ${product.stock <= 0 ? 'disabled' : ''}>
+                <button class="btn btn-primary" onclick="addToCart(${product.id})" ${product.quantity <= 0 ? 'disabled' : ''}>
                     <i class="fas fa-cart-plus"></i> Thêm vào giỏ
                 </button>
-                <button class="btn btn-primary btn-buy-now" onclick="buyNow(${product.id})" ${product.stock <= 0 ? 'disabled' : ''}>
+                <button class="btn btn-primary btn-buy-now" onclick="buyNow(${product.id})" ${product.quantity <= 0 ? 'disabled' : ''}>
                     <i class="fas fa-bolt"></i> Mua ngay
                 </button>
                 <button class="btn btn-icon btn-secondary" onclick="toggleFavorite(${product.id})">
@@ -1189,38 +1188,130 @@ function toggleFavorite(productId) {
 }
 
 // Show notification
+// Show notification in center of screen
 function showNotification(message, type = 'info') {
-    const existing = document.querySelector('.notification-toast');
+    // Remove existing
+    const existing = document.getElementById('global-notification-popup');
     if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'global-notification-popup';
     
-    const toast = document.createElement('div');
-    toast.className = `notification-toast notification-${type}`;
-    toast.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
-        <span>${message}</span>
-    `;
-    toast.style.cssText = `
+    let icon = 'fa-info-circle';
+    let title = 'Thông báo';
+    let color = '#3498db';
+    let bg = '#eff6ff';
+    if (type === 'success') {
+        icon = 'fa-check-circle';
+        title = 'Thành công';
+        color = '#10b981';
+        bg = '#ecfdf5';
+    } else if (type === 'error') {
+        icon = 'fa-times-circle';
+        title = 'Lỗi';
+        color = '#ef4444';
+        bg = '#fef2f2';
+    } else if (type === 'warning') {
+        icon = 'fa-exclamation-triangle';
+        title = 'Cảnh báo';
+        color = '#f59e0b';
+        bg = '#fffbeb';
+    }
+
+    overlay.style.cssText = `
         position: fixed;
-        top: 100px;
-        right: 20px;
-        background: ${type === 'success' ? '#27ae60' : type === 'error' ? '#e74c3c' : type === 'warning' ? '#f39c12' : '#3498db'};
-        color: white;
-        padding: 12px 24px;
-        border-radius: 8px;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.4);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         display: flex;
         align-items: center;
-        gap: 10px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        z-index: 10000;
-        animation: slideIn 0.3s ease;
+        justify-content: center;
+        z-index: 999999;
+        opacity: 0;
+        transition: opacity 0.3s ease;
     `;
-    
-    document.body.appendChild(toast);
-    
+
+    overlay.innerHTML = `
+        <div style="
+            background: white;
+            border-radius: 20px;
+            padding: 32px 40px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            transform: scale(0.8);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        " class="popup-card">
+            <div style="
+                width: 72px;
+                height: 72px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 36px;
+                margin: 0 auto 20px;
+                background: ${bg};
+                color: ${color};
+                border: 3px solid ${color};
+            ">
+                <i class="fas ${icon}"></i>
+            </div>
+            <div style="
+                font-size: 20px;
+                font-weight: 700;
+                color: #111827;
+                margin-bottom: 12px;
+            ">${title}</div>
+            <div style="
+                font-size: 15px;
+                color: #4b5563;
+                line-height: 1.5;
+                margin-bottom: 24px;
+            ">${message}</div>
+            <button style="
+                background: ${color};
+                color: white;
+                border: none;
+                border-radius: 10px;
+                padding: 10px 32px;
+                font-size: 15px;
+                font-weight: 600;
+                cursor: pointer;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                transition: transform 0.2s;
+            " class="popup-close-btn">OK</button>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const closePopup = () => {
+        overlay.style.opacity = '0';
+        overlay.querySelector('.popup-card').style.transform = 'scale(0.8)';
+        setTimeout(() => overlay.remove(), 300);
+    };
+
+    overlay.querySelector('.popup-close-btn').addEventListener('click', closePopup);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closePopup();
+    });
+
+    // Trigger transition
     setTimeout(() => {
-        toast.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+        overlay.style.opacity = '1';
+        overlay.querySelector('.popup-card').style.transform = 'scale(1)';
+    }, 10);
+
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        if (overlay.parentNode) closePopup();
+    }, 4000);
 }
 
 // Update cart badge - gọi hàm global từ layout
@@ -1257,28 +1348,223 @@ function updateCartBadge() {
     }
 }
 
+// Detect product category type
+function getProductCategoryType(product) {
+    const catName = (product.category?.name || '').toLowerCase();
+    const catId = product.category_id;
+
+    // Smartphone categories (IDs 1-5: iPhone, Samsung, Xiaomi, Oppo, Vivo)
+    const phoneKeywords = ['iphone', 'samsung', 'xiaomi', 'oppo', 'vivo'];
+    if (catId <= 5 || phoneKeywords.some(k => catName.includes(k))) return 'phone';
+
+    // Accessory categories by name
+    if (catName.includes('tai nghe')) return 'headphone';
+    if (catName.includes('ốp lưng') || catName.includes('op lung')) return 'case';
+    if (catName.includes('cáp') || catName.includes('cap') || catName.includes('sạc')) return 'charger';
+    if (catName.includes('pin') || catName.includes('sạc dự phòng')) return 'powerbank';
+    if (catName.includes('miếng dán') || catName.includes('kính')) return 'screen_protector';
+    if (catName.includes('giá đỡ') || catName.includes('gimbal') || catName.includes('kẹp')) return 'mount';
+    return 'accessory';
+}
+
 // Render specs table
 function renderSpecs(product) {
-    const specs = product.specifications || {};
     const table = document.getElementById('specsTable');
-    
-    const defaultSpecs = {
-        'Màn hình': specs.screen || 'N/A',
-        'Chip xử lý': specs.processor || 'N/A',
-        'RAM': specs.ram || 'N/A',
-        'Bộ nhớ trong': specs.storage || 'N/A',
-        'Camera sau': specs.rear_camera || 'N/A',
-        'Camera trước': specs.front_camera || 'N/A',
-        'Pin': specs.battery || 'N/A',
-        'Hệ điều hành': specs.os || 'N/A'
-    };
-    
-    table.innerHTML = Object.keys(defaultSpecs).map(key => `
+    const type = getProductCategoryType(product);
+    const name = (product.name || '').toLowerCase();
+    const brand = (product.brand || '');
+    let specsMap = {};
+
+    if (type === 'phone') {
+        // Smartphone specs — detect OS from category name/brand
+        let os = 'Android';
+        if ((product.category?.name || '').toLowerCase().includes('iphone') || brand.toLowerCase() === 'apple') {
+            os = 'iOS 18';
+        } else if (brand.toLowerCase() === 'samsung') {
+            os = 'Android (One UI)';
+        } else if (brand.toLowerCase() === 'xiaomi') {
+            os = 'Android (HyperOS)';
+        } else if (brand.toLowerCase() === 'oppo') {
+            os = 'Android (ColorOS)';
+        } else if (brand.toLowerCase() === 'vivo') {
+            os = 'Android (FuntouchOS)';
+        }
+
+        // Infer screen size from name patterns
+        let screen = 'N/A';
+        if (name.includes('pro max') || name.includes('ultra') || name.includes('+ ') || name.includes('fold')) screen = '6.7" - 7.6" AMOLED/OLED';
+        else if (name.includes('pro') || name.includes('plus')) screen = '6.3" - 6.7" AMOLED/OLED';
+        else if (name.includes('se')) screen = '4.7" Retina LCD';
+        else screen = '6.1" - 6.5" AMOLED/OLED';
+
+        // Infer processor
+        let cpu = 'N/A';
+        if (brand.toLowerCase() === 'apple') {
+            if (name.includes('16 pro')) cpu = 'Apple A18 Pro';
+            else if (name.includes('16')) cpu = 'Apple A18';
+            else if (name.includes('15 pro')) cpu = 'Apple A17 Pro';
+            else if (name.includes('15')) cpu = 'Apple A16 Bionic';
+            else if (name.includes('14')) cpu = 'Apple A15 Bionic';
+            else if (name.includes('se')) cpu = 'Apple A15 Bionic';
+            else cpu = 'Apple A-series';
+        } else if (brand.toLowerCase() === 'samsung') {
+            if (name.includes('s24')) cpu = 'Snapdragon 8 Gen 3 / Exynos 2400';
+            else if (name.includes('fold') || name.includes('flip')) cpu = 'Snapdragon 8 Gen 3';
+            else if (name.includes('a55')) cpu = 'Exynos 1480';
+            else if (name.includes('a35')) cpu = 'Exynos 1380';
+            else if (name.includes('m54')) cpu = 'Exynos 1380';
+            else cpu = 'Exynos / Snapdragon';
+        } else if (brand.toLowerCase() === 'xiaomi') {
+            if (name.includes('14 ultra') || name.includes('poco f6')) cpu = 'Snapdragon 8 Gen 3';
+            else if (name.includes('14')) cpu = 'Snapdragon 8 Gen 3';
+            else if (name.includes('note 13 pro+')) cpu = 'Dimensity 7200 Ultra';
+            else if (name.includes('note 13 pro')) cpu = 'Helio G99 Ultra';
+            else if (name.includes('poco x6')) cpu = 'Dimensity 8300 Ultra';
+            else cpu = 'MediaTek / Snapdragon';
+        } else if (brand.toLowerCase() === 'oppo') {
+            if (name.includes('find x7')) cpu = 'Dimensity 9300';
+            else if (name.includes('find n3')) cpu = 'Dimensity 9200';
+            else if (name.includes('reno11 pro')) cpu = 'Dimensity 8200';
+            else cpu = 'MediaTek Dimensity';
+        } else if (brand.toLowerCase() === 'vivo') {
+            if (name.includes('x100 pro')) cpu = 'Dimensity 9300';
+            else if (name.includes('x100')) cpu = 'Dimensity 9300';
+            else cpu = 'MediaTek Dimensity / Snapdragon';
+        }
+
+        // Camera
+        let rearCam = 'N/A', frontCam = 'N/A';
+        if (brand.toLowerCase() === 'apple') { rearCam = '48MP + 12MP'; frontCam = '12MP TrueDepth'; }
+        else if (name.includes('s24 ultra')) { rearCam = '200MP + 12MP + 10MP + 10MP'; frontCam = '12MP'; }
+        else if (name.includes('note 13 pro')) { rearCam = '200MP + 8MP + 2MP'; frontCam = '16MP'; }
+        else if (name.includes('x100')) { rearCam = '50MP ZEISS + 50MP + 50MP'; frontCam = '32MP'; }
+        else { rearCam = '50MP + 8MP + 2MP'; frontCam = '16MP'; }
+
+        specsMap = {
+            'Màn hình': screen,
+            'Chip xử lý': cpu,
+            'RAM': product.ram || 'N/A',
+            'Bộ nhớ trong': product.storage || 'N/A',
+            'Camera sau': rearCam,
+            'Camera trước': frontCam,
+            'Pin': product.battery || 'N/A',
+            'Hệ điều hành': os,
+            'Thương hiệu': brand,
+        };
+
+    } else if (type === 'headphone') {
+        // Tai nghe specs
+        let connectivity = 'Bluetooth 5.3';
+        let driverSize = '11mm Dynamic Driver';
+        let battery = product.battery || 'N/A';
+        let anc = 'Có';
+        let waterproof = 'IPX4';
+
+        if (name.includes('airpods max')) {
+            connectivity = 'Bluetooth 5.3, Lightning/USB-C';
+            driverSize = '40mm Dynamic Driver';
+            battery = '~20 giờ nghe nhạc';
+            anc = 'Có (ANC + Transparency Mode)';
+            waterproof = 'Chống mồ hôi';
+        } else if (name.includes('airpods')) {
+            driverSize = 'Apple H2 Custom Driver';
+            battery = '~6 giờ (30 giờ với hộp sạc)';
+            anc = 'Có (ANC)';
+        } else if (name.includes('bose')) {
+            driverSize = '40mm Dynamic Driver';
+            battery = '~24 giờ nghe nhạc';
+            anc = 'Có (World-class ANC)';
+            waterproof = 'Không';
+        } else if (name.includes('soundpeats')) {
+            battery = '~6 giờ (24 giờ với hộp sạc)';
+        }
+
+        specsMap = {
+            'Loại tai nghe': name.includes('max') ? 'Over-ear' : 'In-ear TWS',
+            'Kết nối': connectivity,
+            'Driver': driverSize,
+            'Thời gian nghe': battery,
+            'Chống ồn (ANC)': anc,
+            'Kháng nước': waterproof,
+            'Chip': brand.toLowerCase() === 'apple' ? 'Apple H2' : 'Tích hợp',
+            'Thương hiệu': brand,
+        };
+
+    } else if (type === 'case') {
+        specsMap = {
+            'Loại ốp': name.includes('clear') || name.includes('trong') ? 'Trong suốt' : name.includes('chống sốc') ? 'Chống sốc' : 'Bảo vệ toàn diện',
+            'Chất liệu': name.includes('silicone') ? 'Silicone' : name.includes('da') ? 'Da tổng hợp' : 'TPU / Polycarbonate',
+            'Hỗ trợ MagSafe': name.includes('magsafe') || brand.toLowerCase() === 'apple' ? 'Có' : 'Không',
+            'Bảo vệ camera': 'Có (gờ cao)',
+            'Tương thích': name.includes('iphone 16') ? 'iPhone 16 Series' : name.includes('iphone 15') ? 'iPhone 15 Series' : 'Đa dạng dòng máy',
+            'Thương hiệu': brand,
+        };
+
+    } else if (type === 'charger') {
+        let power = 'N/A', connector = 'USB-C', ports = '1 cổng';
+        if (name.includes('magsafe')) { power = '15W'; connector = 'Lightning / USB-C (không dây)'; ports = '1 cổng không dây'; }
+        else if (name.includes('anker nano') || name.includes('65w')) { power = '65W'; ports = '2 cổng USB-C'; }
+        else if (name.includes('100w')) { power = '100W'; }
+        else if (name.includes('baseus')) { power = '100W'; connector = 'USB-C sang USB-C'; }
+
+        specsMap = {
+            'Công suất tối đa': power,
+            'Cổng kết nối': connector,
+            'Số cổng': ports,
+            'Công nghệ sạc': 'GaN / PD 3.0 / PPS',
+            'Tương thích': 'iPhone, Android, Laptop',
+            'Thương hiệu': brand,
+        };
+
+    } else if (type === 'powerbank') {
+        let capacity = product.battery || 'N/A';
+        let output = '65W';
+        if (name.includes('250w') || name.includes('anker prime')) output = '250W (Sạc Laptop)';
+        else if (name.includes('100w')) output = '100W';
+        else if (name.includes('magsafe')) output = '15W MagSafe + 18W USB-C';
+
+        specsMap = {
+            'Dung lượng': capacity,
+            'Công suất đầu ra': output,
+            'Công nghệ sạc': 'PD 3.0 / PPS / GaN',
+            'Số cổng ra': name.includes('3 cổng') ? '3' : '2',
+            'Hỗ trợ MagSafe': name.includes('magsafe') ? 'Có (15W)' : 'Không',
+            'Trọng lượng': name.includes('blade') ? 'Siêu mỏng (~12mm)' : 'Chuẩn',
+            'Thương hiệu': brand,
+        };
+
+    } else if (type === 'screen_protector') {
+        specsMap = {
+            'Loại': name.includes('privacy') || name.includes('chống nhìn') ? 'Chống nhìn trộm' : 'Kính cường lực thường',
+            'Độ cứng': '9H',
+            'Độ dày': '0.3mm',
+            'Góc quan sát bảo vệ': name.includes('privacy') ? '180° (chống nhìn trộm)' : '180° rõ nét',
+            'Chống vân tay': 'Có (lớp phủ Oleophobic)',
+            'Chống xước': 'Có',
+            'Thương hiệu': brand,
+        };
+
+    } else {
+        // Generic accessory
+        specsMap = {
+            'Loại sản phẩm': product.category?.name || 'Phụ kiện',
+            'Thương hiệu': brand,
+            'Tình trạng': 'Chính hãng, mới 100%',
+            'Bảo hành': '12 tháng',
+        };
+    }
+
+    // Filter out N/A entries and render
+    const rows = Object.entries(specsMap)
+        .filter(([, val]) => val && val !== 'N/A')
+        .map(([key, val]) => `
         <tr>
             <td>${key}</td>
-            <td>${defaultSpecs[key]}</td>
+            <td>${val}</td>
         </tr>
     `).join('');
+
+    table.innerHTML = rows || '<tr><td colspan="2" style="text-align:center;color:#9ca3af;">Chưa có thông số kỹ thuật cho sản phẩm này.</td></tr>';
 }
 
 // Load reviews
@@ -1522,8 +1808,7 @@ function createProductCard(product) {
                     <span class="rating-count">(${product.reviews_count || Math.floor(Math.random() * 1000) + 500})</span>
                 </div>
                 <div class="product-specs">
-                    <span class="spec-tag">${product.ram || '8GB'}</span>
-                    <span class="spec-tag">${product.storage || '256GB'}</span>
+                    ${getProductSpecTags(product)}
                 </div>
                 <div class="product-price">
                     <span class="price-current">${formatPrice(discountPrice)}đ</span>
@@ -1647,6 +1932,56 @@ async function addComboToCart() {
     }
 }
 
+// Return spec tag HTML based on product category
+function getProductSpecTags(product) {
+    const catId = product.category_id;
+    const catName = (product.category?.name || '').toLowerCase();
+    const name = (product.name || '').toLowerCase();
+    const phoneKeywords = ['iphone', 'samsung', 'xiaomi', 'oppo', 'vivo'];
+    const isPhone = catId <= 5 || phoneKeywords.some(k => catName.includes(k));
+
+    if (isPhone) {
+        const tags = [];
+        if (product.ram) tags.push(`<span class="spec-tag"><i class="fas fa-memory" style="font-size:10px"></i> ${product.ram}</span>`);
+        if (product.storage) tags.push(`<span class="spec-tag"><i class="fas fa-hdd" style="font-size:10px"></i> ${product.storage}</span>`);
+        if (product.battery) tags.push(`<span class="spec-tag"><i class="fas fa-battery-three-quarters" style="font-size:10px"></i> ${product.battery}</span>`);
+        return tags.length ? tags.join('') : '<span class="spec-tag">Điện thoại</span>';
+    }
+
+    if (catName.includes('tai nghe')) {
+        const type = name.includes('max') ? 'Over-ear' : 'TWS';
+        const anc = name.includes('airpods') || name.includes('bose') || name.includes('soundpeats') ? '<span class="spec-tag">ANC</span>' : '';
+        return `<span class="spec-tag">${type}</span><span class="spec-tag">Bluetooth 5.3</span>${anc}`;
+    }
+
+    if (catName.includes('ốp lưng') || catName.includes('op lung')) {
+        const isMagSafe = name.includes('magsafe') || (product.brand || '').toLowerCase() === 'apple';
+        return `<span class="spec-tag">Chính hãng</span>${isMagSafe ? '<span class="spec-tag">MagSafe</span>' : '<span class="spec-tag">Chống sốc</span>'}`;
+    }
+
+    if (catName.includes('cáp') || catName.includes('cap') || catName.includes('sạc')) {
+        const power = name.includes('250w') ? '250W' : name.includes('100w') ? '100W' : name.includes('65w') ? '65W' : name.includes('15w') ? '15W' : 'Sạc nhanh';
+        return `<span class="spec-tag">${power}</span><span class="spec-tag">GaN</span>`;
+    }
+
+    if (catName.includes('pin') || catName.includes('sạc dự phòng')) {
+        const capacity = product.battery || '';
+        return `${capacity ? `<span class="spec-tag">${capacity}</span>` : ''}<span class="spec-tag">Sạc nhanh</span>`;
+    }
+
+    if (catName.includes('miếng dán') || catName.includes('kính')) {
+        const isPrivacy = name.includes('privacy') || name.includes('chống nhìn');
+        return `<span class="spec-tag">9H</span>${isPrivacy ? '<span class="spec-tag">Chống nhìn trộm</span>' : '<span class="spec-tag">Chống trầy</span>'}`;
+    }
+
+    if (catName.includes('giá đỡ')) {
+        return `<span class="spec-tag">Đa năng</span><span class="spec-tag">Chính hãng</span>`;
+    }
+
+    // Fallback
+    return `<span class="spec-tag">${product.category?.name || 'Phụ kiện'}</span>`;
+}
+
 function getProductFallbackImage(name, images = []) {
     if (images.length > 0) {
         const firstImage = images[0];
@@ -1743,18 +2078,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const token = localStorage.getItem('auth_token');
         if (!token) {
-            alert('Vui lòng đăng nhập để đánh giá sản phẩm');
+            showNotification('Vui lòng đăng nhập để đánh giá sản phẩm', 'warning');
             return;
         }
 
         if (!selectedRating) {
-            alert('Vui lòng chọn số sao đánh giá');
+            showNotification('Vui lòng chọn số sao đánh giá', 'warning');
             return;
         }
 
         const comment = document.getElementById('reviewComment').value.trim();
         if (!comment) {
-            alert('Vui lòng nhập nội dung đánh giá');
+            showNotification('Vui lòng nhập nội dung đánh giá', 'warning');
             return;
         }
         
@@ -1774,7 +2109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (response.ok) {
                 const data = await response.json();
-                alert(data.message || 'Cảm ơn bạn đã đánh giá!');
+                showNotification(data.message || 'Cảm ơn bạn đã đánh giá!', 'success');
                 loadReviews();
                 this.reset();
                 selectedRating = 0;
@@ -1784,10 +2119,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } else {
                 const data = await response.json();
-                alert(data.message || 'Không thể gửi đánh giá');
+                showNotification(data.message || 'Không thể gửi đánh giá', 'error');
             }
         } catch (error) {
-            alert('Đã có lỗi xảy ra');
+            showNotification('Đã có lỗi xảy ra', 'error');
         }
     });
 });

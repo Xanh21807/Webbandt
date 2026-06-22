@@ -207,6 +207,40 @@ function formatPrice(price) {
     return new Intl.NumberFormat('vi-VN').format(price);
 }
 
+// Get product image url helper
+function getProductImage(product) {
+    const images = product.images || [];
+
+    if (images.length > 0) {
+        const firstImage = images[0];
+        return typeof firstImage === 'object' ? firstImage.image_url : firstImage;
+    }
+
+    const name = (product.name || '').toLowerCase();
+
+    if (name.includes('iphone')) {
+        return 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=300&h=300&fit=crop';
+    }
+
+    if (name.includes('samsung')) {
+        return 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=300&h=300&fit=crop';
+    }
+
+    if (name.includes('xiaomi')) {
+        return 'https://images.unsplash.com/photo-1598327106026-d9521da673d1?w=300&h=300&fit=crop';
+    }
+
+    if (name.includes('oppo')) {
+        return 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=300&h=300&fit=crop';
+    }
+
+    if (name.includes('vivo')) {
+        return 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=300&h=300&fit=crop';
+    }
+
+    return 'https://placehold.co/300x300/f3f4f6/111827?text=XanhStore';
+}
+
 // Check auth
 document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('auth_token');
@@ -258,7 +292,7 @@ async function loadFavorites() {
                             return `
                                 <div class="favorite-item" data-id="${product.id}">
                                     <div class="favorite-image">
-                                        <img src="${product.image || 'https://placehold.co/200x200/f5f5f5/333?text=No+Image'}" alt="${product.name}">
+                                        <img src="${getProductImage(product)}" alt="${product.name}">
                                         <button class="favorite-remove" onclick="removeFavorite(${product.id})" title="Xóa khỏi yêu thích">
                                             <i class="fas fa-heart"></i>
                                         </button>

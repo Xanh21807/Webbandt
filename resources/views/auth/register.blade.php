@@ -256,10 +256,7 @@
     <div class="auth-card">
         <!-- Logo -->
         <div class="auth-logo">
-            <div class="auth-logo-icon">
-                <i class="fas fa-mobile-alt"></i>
-            </div>
-            <div class="auth-logo-text">XanhStore</div>
+            <img src="{{ asset('images/logo.png') }}" alt="XanhStore" style="height: 70px; width: auto; object-fit: contain;">
         </div>
         
         <!-- Title -->
